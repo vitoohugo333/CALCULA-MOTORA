@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test:e2e": "playwright test",
-    "check:production": "node --check app.js && node --check sw.js && node tests/verify-production.mjs && playwright test"
+    "check:production": "node --check app.js && node --check sw.js && node --check netlify/edge-functions/access-gate.js && node tests/verify-production.mjs && node tests/access-gate.test.mjs && playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2"
