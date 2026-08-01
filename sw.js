@@ -1,4 +1,4 @@
-const VERSION = 'vetta-v3.2.0';
+const VERSION = 'vetta-v3.3.0';
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const ROOT = new URL('./', self.location).href;
@@ -26,11 +26,12 @@ const APP_SHELL = [
   './parts/patch-02.part',
   './parts/patch-03.part',
   './parts/patch-04.part',
-  './parts/patch-05.part'
+  './parts/patch-05.part',
+  './parts/patch-06.part'
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(STATIC_CACHE).then(cache => cache.addAll(APP_SHELL)));
+  event.waitUntil(caches.open(STATIC_CACHE).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {
