@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -21,8 +21,15 @@ jobs:
         with:
           node-version: 22
 
-      - name: Build single production bundle
-        run: python3 scripts/build-production.py
+      - name: Prepare production bundle
+        run: |
+          if [ -d parts ]; then
+            python3 scripts/build-production.py
+          else
+            rm -rf _site
+            mkdir _site
+            cp index.html app.js styles.css manifest.webmanifest icon.svg sw.js netlify.toml _site/
+          fi
 
       - name: Verify structure and syntax
         run: |
@@ -71,3 +78,130 @@ jobs:
           path: _site
           if-no-files-found: error
           retention-days: 3
+
+  materialize:
+    needs: verify
+    if: github.event_name == 'pull_request' && github.head_ref == 'fix/production-monolith-3.5.1' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Download verified bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: vetta-production-3.5.1
+          path: _verified
+
+      - name: Replace legacy runtime with verified files
+        env:
+          TARGET_BRANCH: ${{ github.head_ref }}
+        run: |
+          cp _verified/index.html index.html
+          cp _verified/app.js app.js
+          cp _verified/sw.js sw.js
+          cp _verified/netlify.toml netlify.toml
+
+          rm -rf parts
+          rm -f vetta-3.4.3.js vetta-3.4.4.js
+          rm -f scripts/build-production.py
+          rmdir scripts 2>/dev/null || true
+
+          cat > package.json <<'JSON'
+          {
+            "name": "vetta-driver-intelligence",
+            "private": true,
+            "version": "3.5.1",
+            "type": "module",
+            "scripts": {
+              "test:e2e": "playwright test",
+              "check:production": "node --check app.js && node --check sw.js && node tests/verify-production.mjs && playwright test"
+            },
+            "devDependencies": {
+              "@playwright/test": "^1.54.2"
+            }
+          }
+          JSON
+
+          cat > tests/verify-production.mjs <<'TEST'
+          import { readFileSync } from 'node:fs';
+          import assert from 'node:assert/strict';
+
+          const app = readFileSync('app.js', 'utf8');
+          const index = readFileSync('index.html', 'utf8');
+          const sw = readFileSync('sw.js', 'utf8');
+
+          assert.equal((app.match(/app\.init\(\);/g) || []).length, 1);
+          assert.equal((app.match(/saveCostButton'\)\.addEventListener\('click'/g) || []).length, 1);
+          for (const forbidden of ["'./parts/", 'new Function', 'stopImmediatePropagation', "const RELEASE = '3.1.0'", "const RELEASE = '3.2.0'", "const RELEASE = '3.3.0'", 'vettaPatchStyles', 'Custos fixos migrados']) {
+            assert.ok(!app.includes(forbidden), `Conteúdo proibido: ${forbidden}`);
+          }
+          assert.ok(app.includes('type="button" id="saveCostButton"'));
+          assert.ok(app.includes('type="button" id="closeCostModal"'));
+          assert.ok(app.includes("const APP_RELEASE = '3.5.1'"));
+          assert.ok(index.includes('app.js?v=3.5.1'));
+          assert.ok(!index.includes('appRoot'));
+          assert.ok(sw.includes("vetta-v3.5.1"));
+          console.log('VETTA 3.5.1 production verification passed');
+          TEST
+
+          cat > .github/workflows/deploy-pages.yml <<'WORKFLOW'
+          name: Deploy VETTA to GitHub Pages
+
+          on:
+            push:
+              branches:
+                - main
+            workflow_dispatch:
+
+          permissions:
+            contents: read
+            pages: write
+            id-token: write
+
+          concurrency:
+            group: pages
+            cancel-in-progress: true
+
+          jobs:
+            deploy:
+              runs-on: ubuntu-latest
+              environment:
+                name: github-pages
+                url: ${{ steps.deployment.outputs.page_url }}
+              steps:
+                - name: Checkout
+                  uses: actions/checkout@v4
+
+                - name: Verify static production
+                  run: |
+                    node --check app.js
+                    node --check sw.js
+                    node tests/verify-production.mjs
+
+                - name: Prepare static site
+                  run: |
+                    rm -rf _site
+                    mkdir _site
+                    cp index.html app.js styles.css manifest.webmanifest icon.svg sw.js netlify.toml .nojekyll _site/ 2>/dev/null || true
+
+                - name: Configure Pages
+                  uses: actions/configure-pages@v5
+
+                - name: Upload static site
+                  uses: actions/upload-pages-artifact@v4
+                  with:
+                    path: _site
+
+                - name: Deploy to GitHub Pages
+                  id: deployment
+                  uses: actions/deploy-pages@v4
+          WORKFLOW
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "release: materializa VETTA 3.5.1 sem runtime legado"
+          git push origin "HEAD:${TARGET_BRANCH}"
