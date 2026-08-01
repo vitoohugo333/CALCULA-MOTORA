@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -42,8 +42,6 @@ jobs:
 
           ui_files = [root / 'parts' / f'ui-{index:02d}.part' for index in range(1, 5)]
           app_files = [root / 'parts' / f'app-{index:02d}.part' for index in range(1, 10)]
-          # Somente as evoluções funcionais consolidadas. Os patches 07/08 eram
-          # camadas de recuperação que duplicavam renderização e listeners.
           app_files += [root / 'parts' / f'patch-{index:02d}.part' for index in range(1, 7)]
 
           ui = ''.join(path.read_text(encoding='utf-8') for path in ui_files)
@@ -165,3 +163,97 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Persist concise source on main
+        if: success() && hashFiles('parts/**') != ''
+        shell: bash
+        run: |
+          cp _site/index.html index.html
+          cp _site/app.js app.js
+          cp _site/sw.js sw.js
+          rm -rf parts _site
+          rm -f vetta-3.4.3.js vetta-3.4.4.js
+          mkdir -p tests
+
+          cat > tests/verify-monolith.mjs <<'TEST'
+          import { readFileSync } from 'node:fs';
+          import assert from 'node:assert/strict';
+
+          const app = readFileSync('app.js', 'utf8');
+          const index = readFileSync('index.html', 'utf8');
+          const sw = readFileSync('sw.js', 'utf8');
+
+          assert.equal((app.match(/app\.init\(\);/g) || []).length, 1, 'o app deve inicializar exatamente uma vez');
+          assert.equal((app.match(/saveCostButton'\)\.addEventListener\('click'/g) || []).length, 1, 'salvar despesa deve ter exatamente um listener');
+          assert.equal((app.match(/saveCostButton[\s\S]{0,120}onclick/g) || []).length, 0, 'salvar despesa não pode ter onclick concorrente');
+          assert.ok(!app.includes("'./parts/"), 'app.js não pode carregar partes ou patches');
+          assert.ok(index.includes('app.js?v=3.5.0'), 'index deve carregar o código principal');
+          assert.ok(app.includes('type="button" id="saveCostButton"'), 'botão de despesa deve ser type button');
+          assert.ok(sw.includes("vetta-v3.5.0"), 'service worker deve usar o cache atual');
+          console.log('VETTA source verification passed');
+          TEST
+
+          cat > .github/workflows/deploy-pages.yml <<'WORKFLOW'
+          name: Deploy VETTA to GitHub Pages
+
+          on:
+            push:
+              branches:
+                - main
+            workflow_dispatch:
+
+          permissions:
+            contents: read
+            pages: write
+            id-token: write
+
+          concurrency:
+            group: pages
+            cancel-in-progress: true
+
+          jobs:
+            deploy:
+              runs-on: ubuntu-latest
+              environment:
+                name: github-pages
+                url: ${{ steps.deployment.outputs.page_url }}
+              steps:
+                - name: Checkout
+                  uses: actions/checkout@v6
+
+                - name: Verify application
+                  run: |
+                    node --check app.js
+                    node --check sw.js
+                    node tests/verify-monolith.mjs
+
+                - name: Prepare static site
+                  run: |
+                    rm -rf _site
+                    mkdir _site
+                    cp index.html app.js styles.css manifest.webmanifest icon.svg sw.js .nojekyll _site/
+
+                - name: Configure Pages
+                  uses: actions/configure-pages@v5
+
+                - name: Upload static site
+                  uses: actions/upload-pages-artifact@v4
+                  with:
+                    path: _site
+
+                - name: Deploy to GitHub Pages
+                  id: deployment
+                  uses: actions/deploy-pages@v4
+          WORKFLOW
+
+          node --check app.js
+          node --check sw.js
+          node tests/verify-monolith.mjs
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "refactor: persiste VETTA 3.5.0 em código principal"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
