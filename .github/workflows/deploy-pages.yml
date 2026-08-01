@@ -23,29 +23,20 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - name: Verify application entry
+      - name: Verify static production
         run: |
           node --check app.js
           node --check sw.js
-          node <<'NODE'
-          const fs = require('node:fs');
-          const assert = require('node:assert/strict');
-          const app = fs.readFileSync('app.js', 'utf8');
-          const index = fs.readFileSync('index.html', 'utf8');
-          const patch7 = fs.readFileSync('parts/patch-07.part', 'utf8');
-          const patch8 = fs.readFileSync('parts/patch-08.part', 'utf8');
+          node tests/verify-production.mjs
 
-          assert.ok(index.includes('app.js?v=3.5.0'), 'index deve carregar somente app.js 3.5.0');
-          assert.ok(app.includes("const RELEASE = '3.5.0'"), 'app.js deve identificar a versão 3.5.0');
-          assert.ok(!app.includes('patch-07.part'), 'app.js não deve executar o patch de migração legado');
-          assert.ok(!app.includes('patch-08.part'), 'app.js não deve executar handlers legados');
-          assert.ok(!app.includes('stopImmediatePropagation'), 'entrada principal não deve bloquear listeners concorrentes');
-          assert.ok(!patch7.includes('app.render'), 'patch 07 deve permanecer neutro');
-          assert.ok(!patch8.includes('onclick'), 'patch 08 não pode reinstalar handlers');
-          console.log('VETTA 3.5.0 entry verification passed');
-          NODE
+      - name: Prepare static site
+        run: |
+          rm -rf _site
+          mkdir _site
+          cp index.html app.js styles.css manifest.webmanifest icon.svg sw.js netlify.toml _site/
+          if [ -f .nojekyll ]; then cp .nojekyll _site/; fi
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -53,7 +44,7 @@ jobs:
       - name: Upload static site
         uses: actions/upload-pages-artifact@v4
         with:
-          path: .
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
