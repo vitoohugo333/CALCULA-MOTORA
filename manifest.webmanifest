@@ -6,12 +6,11 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#F8FAFC",
   "theme_color": "#0B1121",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
-  "categories": ["finance", "business", "utilities"],
+  "categories": ["finance", "productivity", "utilities"],
   "icons": [
     {
       "src": "./icon.svg",
