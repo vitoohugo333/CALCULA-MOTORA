@@ -1,0 +1,39 @@
+name: Verify Modular Foundation
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/platform/**'
+      - 'src/app/platform-runtime.js'
+      - 'src/modules/**'
+      - 'tests/platform.test.mjs'
+      - 'tests/verify-production.mjs'
+      - 'package.json'
+      - '.github/workflows/verify-modular-foundation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify modular foundation
+        run: npm run check:platform
+
+      - name: Verify production structure
+        run: node tests/verify-production.mjs
