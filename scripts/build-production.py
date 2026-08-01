@@ -26,6 +26,27 @@ app_files += [ROOT / "parts" / f"patch-{index:02d}.part" for index in range(1, 7
 ui = "".join(read(path) for path in ui_files)
 source = "".join(read(path) for path in app_files)
 
+# A versão pública é definida uma única vez. As antigas constantes internas
+# das evoluções deixam de existir no bundle final.
+source = f"const APP_RELEASE = '{RELEASE}';\n" + source
+source, release_constants = re.subn(
+    r"const RELEASE = '3\.\d+\.\d+';", "const RELEASE = APP_RELEASE;", source
+)
+if release_constants != 3:
+    raise SystemExit(
+        f"Esperava substituir três versões internas; substituí {release_constants}"
+    )
+
+# Não importamos mais chaves históricas. A chave atual continua preservada.
+source, legacy_key_blocks = re.subn(
+    r"const LEGACY_KEYS = \[[^\]]*\];", "const LEGACY_KEYS = [];", source, count=1
+)
+if legacy_key_blocks != 1:
+    raise SystemExit("Bloco de chaves antigas não encontrado")
+
+source = source.replace("Custos fixos migrados", "Outros custos mensais")
+source = source.replace("vettaPatchStyles", "vettaFeatureStyles")
+
 init_marker = "\napp.init();\n"
 if source.count(init_marker) != 1:
     raise SystemExit(
@@ -57,7 +78,6 @@ source = source.replace(
 
 source += f"""
 
-const APP_RELEASE = '{RELEASE}';
 const CURRENT_STATE_VERSION = 10;
 const OBSOLETE_STORAGE_KEYS = ['vetta-driver-intelligence-v2', 'vetta-state'];
 
