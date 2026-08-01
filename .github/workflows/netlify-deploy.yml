@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Verify exact production source
+      - name: Verify exact protected source
         shell: bash
         run: |
           test ! -d parts
@@ -37,9 +37,19 @@ jobs:
           test ! -f vetta-3.4.4.js
           node --check app.js
           node --check sw.js
+          node --check netlify/edge-functions/access-gate.js
           node tests/verify-production.mjs
+          node tests/access-gate.test.mjs
           RELEASE="$(node -e "const fs=require('fs');const s=fs.readFileSync('app.js','utf8');const m=s.match(/const APP_RELEASE = '([^']+)'/);if(!m)process.exit(1);process.stdout.write(m[1]);")"
           printf 'EXPECTED_RELEASE=%s\n' "$RELEASE" >> "$GITHUB_ENV"
+
+      - name: Prepare static publish directory
+        shell: bash
+        run: |
+          rm -rf _site
+          mkdir _site
+          cp index.html app.js styles.css manifest.webmanifest icon.svg sw.js _site/
+          if [ -f .nojekyll ]; then cp .nojekyll _site/; fi
 
       - name: Normalize Netlify credential in memory
         shell: bash
@@ -80,27 +90,27 @@ jobs:
           console.log('Projeto VETTA autorizado pela credencial.');
           NODE
 
-      - name: Deploy exact static release
+      - name: Deploy protected static release
         run: |
           npx --yes netlify-cli@latest deploy \
             --prod \
             --no-build \
-            --dir=. \
+            --dir=_site \
             --site="$NETLIFY_SITE_NAME" \
             --auth="$NETLIFY_AUTH_TOKEN_CLEAN" \
-            --message="VETTA ${EXPECTED_RELEASE} ${GITHUB_SHA}"
+            --message="VETTA protected ${EXPECTED_RELEASE} ${GITHUB_SHA}"
 
-      - name: Verify live Netlify release
+      - name: Verify live access gate
         shell: bash
         run: |
           for attempt in {1..12}; do
-            INDEX="$(curl -fsSL -H 'Cache-Control: no-cache' "https://vetta-driver-intelligence.netlify.app/?release=${EXPECTED_RELEASE}")" || true
-            APP="$(curl -fsSL -H 'Cache-Control: no-cache' "https://vetta-driver-intelligence.netlify.app/app.js?release=${EXPECTED_RELEASE}")" || true
-            if grep -q "app.js?v=${EXPECTED_RELEASE}" <<<"$INDEX" && grep -q "const APP_RELEASE = '${EXPECTED_RELEASE}'" <<<"$APP"; then
-              echo "Netlify serve VETTA ${EXPECTED_RELEASE}."
+            STATUS="$(curl -sS -o /tmp/vetta-gate.html -w '%{http_code}' -H 'Cache-Control: no-cache' "https://vetta-driver-intelligence.netlify.app/?release=${EXPECTED_RELEASE}")" || true
+            ASSET_STATUS="$(curl -sS -o /tmp/vetta-asset.txt -w '%{http_code}' -H 'Cache-Control: no-cache' "https://vetta-driver-intelligence.netlify.app/app.js?release=${EXPECTED_RELEASE}")" || true
+            if [ "$STATUS" = "401" ] && grep -q 'data-vetta-access-gate="true"' /tmp/vetta-gate.html && [ "$ASSET_STATUS" = "401" ]; then
+              echo "Netlify protege VETTA ${EXPECTED_RELEASE}."
               exit 0
             fi
             sleep 10
           done
-          echo "A URL pública não entregou a versão ${EXPECTED_RELEASE} no prazo esperado."
+          echo 'A URL pública não ativou a barreira de acesso no prazo esperado.'
           exit 1
