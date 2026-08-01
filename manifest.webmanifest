@@ -1,20 +1,39 @@
 {
+  "id": "./",
   "name": "VETTA Driver Intelligence",
   "short_name": "VETTA",
-  "description": "Calculadora financeira mobile para motoristas.",
+  "description": "Metas, custos, histórico e inteligência financeira para motoristas de aplicativo.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#F8FAFC",
   "theme_color": "#0B1121",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
+  "categories": ["finance", "business", "utilities"],
   "icons": [
     {
       "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Registrar meu dia",
+      "short_name": "Registrar",
+      "description": "Abrir o fechamento diário do VETTA.",
+      "url": "./?view=day",
+      "icons": [{ "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Ver histórico",
+      "short_name": "Histórico",
+      "description": "Consultar os resultados registrados.",
+      "url": "./?view=history",
+      "icons": [{ "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     }
   ]
 }
