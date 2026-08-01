@@ -1,0 +1,68 @@
+name: Verify VETTA Production
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build single production bundle
+        run: python3 scripts/build-production.py
+
+      - name: Verify structure and syntax
+        run: |
+          node --check _site/app.js
+          node --check _site/sw.js
+          node <<'NODE'
+          const fs = require('node:fs');
+          const assert = require('node:assert/strict');
+          const app = fs.readFileSync('_site/app.js', 'utf8');
+          const index = fs.readFileSync('_site/index.html', 'utf8');
+          const sw = fs.readFileSync('_site/sw.js', 'utf8');
+
+          assert.equal((app.match(/app\.init\(\);/g) || []).length, 1, 'app deve inicializar exatamente uma vez');
+          assert.equal((app.match(/saveCostButton'\)\.addEventListener\('click'/g) || []).length, 1, 'salvar despesa deve ter um único listener');
+          assert.ok(!app.includes("'./parts/"), 'bundle não pode carregar parts no navegador');
+          assert.ok(!app.includes('new Function'), 'bundle não pode executar código montado dinamicamente');
+          assert.ok(!app.includes('stopImmediatePropagation'), 'bundle não pode bloquear listeners concorrentes');
+          assert.ok(app.includes('type="button" id="saveCostButton"'), 'salvar despesa deve ser type button');
+          assert.ok(app.includes('type="button" id="closeCostModal"'), 'fechar modal deve ser type button');
+          assert.ok(app.includes("const APP_RELEASE = '3.5.1'"), 'bundle deve declarar a versão 3.5.1');
+          assert.ok(index.includes('app.js?v=3.5.1'), 'HTML deve carregar o bundle 3.5.1');
+          assert.ok(!index.includes('appRoot'), 'HTML não pode depender do carregador antigo');
+          assert.ok(!index.includes('vetta-3.4'), 'HTML não pode carregar recuperadores antigos');
+          assert.ok(sw.includes("vetta-v3.5.1"), 'service worker deve usar cache 3.5.1');
+          console.log('Estrutura consolidada validada');
+          NODE
+
+      - name: Install browser tests
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Test cost modal end to end
+        run: npm run test:e2e
+
+      - name: Upload verified production bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: vetta-production-3.5.1
+          path: _site
+          if-no-files-found: error
+          retention-days: 3
