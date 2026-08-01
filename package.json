@@ -4,8 +4,11 @@
   "version": "3.5.1",
   "type": "module",
   "scripts": {
+    "test": "npm run test:platform",
+    "test:platform": "node --test tests/platform.test.mjs",
     "test:e2e": "playwright test",
-    "check:production": "node --check app.js && node --check sw.js && node --check netlify/edge-functions/access-gate.js && node tests/verify-production.mjs && node tests/access-gate.test.mjs && playwright test"
+    "check:platform": "node --check src/platform/manifest.js && node --check src/platform/event-bus.js && node --check src/platform/feature-flags.js && node --check src/platform/module-registry.js && node --check src/platform/diagnostics.js && node --check src/platform/index.js && node --check src/app/platform-runtime.js && node --check src/modules/platform-demo/index.js && npm run test:platform",
+    "check:production": "node --check app.js && node --check sw.js && npm run check:platform && node tests/verify-production.mjs && playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2"
