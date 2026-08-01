@@ -18,11 +18,12 @@ assert.ok(app.includes("const APP_RELEASE = '3.5.1'"));
 assert.ok(index.includes('app.js?v=3.5.1'));
 assert.ok(!index.includes('appRoot'));
 
-assert.ok(sw.includes("vetta-secure-access-v1"));
-assert.ok(sw.includes("fetch(event.request, { cache: 'no-store' })"));
-assert.ok(!sw.includes('cache.put('));
-assert.ok(!sw.includes('caches.match('));
-assert.ok(!sw.includes('APP_SHELL'));
+assert.ok(sw.includes("vetta-v3.5.1-offline"));
+assert.ok(sw.includes('const APP_SHELL = ['));
+assert.ok(sw.includes('cache.addAll(APP_SHELL)'));
+assert.ok(sw.includes('cache.put(event.request, response.clone())'));
+assert.ok(sw.includes('caches.match(event.request, { ignoreSearch: true })'));
+assert.ok(sw.includes("caches.match('./index.html')"));
 
 assert.ok(netlify.includes('publish = "_site"'));
 assert.ok(netlify.includes('edge_functions = "netlify/edge-functions"'));
@@ -32,4 +33,4 @@ assert.ok(accessGate.includes("runtimeEnv('VETTA_ACCESS_SESSION_SECRET')"));
 assert.ok(accessGate.includes("data-vetta-access-gate=\"true\""));
 assert.equal(accessGate.match(/\b[a-f0-9]{64}\b/gi), null, 'hash real não pode estar no repositório');
 
-console.log('VETTA 3.5.1 secure production verification passed');
+console.log('VETTA 3.5.1 protected and offline production verification passed');
