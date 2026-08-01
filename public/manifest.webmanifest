@@ -1,0 +1,13 @@
+{
+  "name": "VETTA Driver Intelligence",
+  "short_name": "VETTA",
+  "description": "Metas, custos, histórico e inteligência financeira para motoristas de aplicativo.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0b1121",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
