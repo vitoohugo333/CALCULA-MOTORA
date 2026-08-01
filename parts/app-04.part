@@ -1,0 +1,66 @@
+ibutionKm, actualGross, actualKm, actualFuel, actualVariable, actualPercent, actualContribution, fixedAllocated, actualNet, remainingContribution, remainingDays, dailyContribution, dailyGross, dailyKm, dailyNet, totalRequiredKm, totalGross, totalFuel, totalVariable, totalPercent, projectedNet, expectedNetToDate, paceDelta, progress, avgRevenueKm, avgNetKm, earnedDays };
+  },
+
+  render() {
+    const c = this.calculations();
+    this.$('targetProfitDisplay').textContent = this.money(this.state.targetProfit, 0);
+    this.$('extraDaysOffBadge').textContent = this.state.extraDaysOff;
+    this.$('kpiGrossDaily').textContent = this.integer(c.dailyGross);
+    this.$('kpiNetDaily').textContent = this.money(c.dailyNet);
+    this.$('kpiKmDaily').textContent = `${this.integer(c.dailyKm)} km`;
+    this.$('navFuelPrice').textContent = `${this.state.fuel.label}: ${this.money(c.fuelKm)}/km`;
+    this.$('fuelCostBadge').textContent = `${this.money(c.fuelKm)}/km`;
+    this.$('dreGross').textContent = this.money(c.totalGross);
+    this.$('dreKm').textContent = `${this.integer(c.totalRequiredKm)} km`;
+    this.$('dreFuel').textContent = `- ${this.money(c.totalFuel)}`;
+    this.$('dreVariable').textContent = `- ${this.money(c.totalVariable)}`;
+    this.$('drePercent').textContent = `- ${this.money(c.totalPercent)}`;
+    this.$('dreFixed').textContent = `- ${this.money(c.costs.monthlyFixed)}`;
+    this.$('dreNet').textContent = this.money(this.state.targetProfit);
+    this.$('actualNet').textContent = this.money(Math.max(0, c.actualNet), 0);
+    this.$('projectedNet').textContent = this.money(c.projectedNet, 0);
+    this.$('remainingDays').textContent = c.remainingDays;
+    this.$('monthProgress').style.width = `${c.progress}%`;
+    this.$('calendarSummary').textContent = `Há ${c.ctx.selectedDates.length} dias compatíveis com sua agenda. Com ${this.state.extraDaysOff} folga(s) extra(s), o plano considera ${c.ctx.plannedDays} dias de trabalho.`;
+    document.querySelectorAll('.day-button').forEach(button => { const active = Number(button.dataset.days) === this.currentDaysPerWeek(); button.className = `day-button flex-1 py-3 rounded-xl text-[10px] font-bold uppercase ${active ? 'day-btn-active' : 'day-btn-inactive'}`; });
+    document.querySelectorAll('.weekday-button').forEach(button => { const active = this.state.workWeekdays.includes(Number(button.dataset.weekday)); button.className = `weekday-button py-3 rounded-xl text-[10px] font-bold ${active ? 'weekday-active' : 'weekday-inactive bg-slate-50'}`; });
+    document.querySelectorAll('.period-button').forEach(button => { const active = Number(button.dataset.period) === this.state.compare.period; button.className = `period-button px-3 py-1.5 rounded-md text-[10px] font-bold ${active ? 'period-btn-active' : 'period-btn-inactive'}`; });
+    this.renderStatus(c); this.renderWeek(c); this.renderInsights(c); this.renderHistory(c); this.renderCosts(c); this.renderLearning(c); this.renderEvents(); this.renderCharts(c); this.renderRecordPreview();
+  },
+
+  renderStatus(c) {
+    const title = this.$('monthStatusTitle'), text = this.$('monthStatusText'), pill = this.$('monthStatusPill'), hero = this.$('heroStatus');
+    pill.className = 'px-3 py-1.5 rounded-full text-[10px] font-extrabold ';
+    if (!c.records.length) {
+      title.textContent = 'Comece registrando seu primeiro dia'; text.textContent = `Sua meta foi dividida por ${c.ctx.plannedDays} dias de trabalho neste mês.`; pill.textContent = 'PLANO PRONTO'; pill.className += 'status-neutral'; hero.textContent = `Você tem ${c.remainingDays} dias planejados para alcançar ${this.money(this.state.targetProfit, 0)} líquidos.`; return;
+    }
+    if (c.paceDelta >= 0) { title.textContent = `Você está ${this.money(c.paceDelta, 0)} adiantado`; text.textContent = c.earnedDays > 0 ? `Seu ritmo já representa ${c.earnedDays} dia(s) de meta. Preserve a vantagem ou transforme em folga.` : 'Seu resultado real está acima do ritmo necessário para o mês.'; pill.textContent = 'ADIANTADO'; pill.className += 'status-positive'; }
+    else { title.textContent = `Faltam ${this.money(Math.abs(c.paceDelta), 0)} para o ritmo ideal`; text.textContent = `A diferença foi redistribuída pelos ${c.remainingDays} dias restantes.`; pill.textContent = 'AJUSTANDO'; pill.className += 'status-negative'; }
+    hero.textContent = c.remainingDays > 0 ? `Meta recalculada após ${c.records.length} dia(s): ${this.money(c.dailyGross, 0)} de faturamento por dia.` : 'Não restam dias planejados neste mês. Revise a agenda ou a meta.';
+  },
+
+  renderWeek(c) {
+    const week = this.weekContext(c), delta = week.actual - week.target;
+    this.$('weekTarget').textContent = this.money(week.target, 0);
+    this.$('weekActual').textContent = this.money(week.actual, 0);
+    this.$('weekRevenueKm').textContent = this.money(week.revenueKm);
+    this.$('weekStatusPill').className = `px-3 py-1.5 rounded-full text-[10px] font-extrabold ${delta >= 0 && week.records.length ? 'status-positive' : week.records.length ? 'status-negative' : 'status-neutral'}`;
+    this.$('weekStatusPill').textContent = week.records.length ? (delta >= 0 ? 'NO RITMO' : 'AJUSTANDO') : 'SEMANA';
+    this.$('weekStatusTitle').textContent = week.records.length ? (delta >= 0 ? 'Semana acima da rota' : 'Semana pede recuperação') : 'Planejamento semanal';
+    this.$('weekStatusText').textContent = week.records.length ? `${week.records.length} dia(s) registrados. Saldo semanal: ${delta >= 0 ? '+' : '-'} ${this.money(Math.abs(delta), 0)}.` : `A semana tem ${week.dates.length} dia(s) previstos na sua agenda.`;
+  },
+
+  renderInsights(c) {
+    const title = this.$('insightTitle'), text = this.$('insightText'), reasons = this.$('insightReasons'); const items = [];
+    if (!c.records.length) { title.textContent = 'Sua meta está pronta'; text.textContent = `Para alcançar ${this.money(this.state.targetProfit, 0)} líquidos, a estimativa é rodar ${this.integer(c.dailyKm)} km por dia.`; }
+    else if (c.paceDelta < 0) { title.textContent = 'Por que sua meta diária aumentou?'; text.textContent = 'O VETTA recalculou o esforço necessário sem esconder o motivo.'; items.push(`O ritmo acumulado está ${this.money(Math.abs(c.paceDelta), 0)} abaixo do planejado.`); }
+    else { title.textContent = c.earnedDays > 0 ? 'Você conquistou margem para folgar' : 'Seu ritmo está saudável'; text.textContent = c.earnedDays > 0 ? `A vantagem atual equivale a aproximadamente ${c.earnedDays} dia(s) da meta.` : 'Mantendo a eficiência atual, a projeção continua acima do objetivo.'; }
+    if (this.state.extraDaysOff > 0) items.push(`${this.state.extraDaysOff} folga(s) extra(s) deixam menos dias para dividir a mesma meta.`);
+    items.push(`${this.state.fuel.label} custa ${this.money(c.fuelKm)}/km; custos personalizados adicionam ${this.money(c.costs.perKm)}/km e ${(c.costs.percent * 100).toFixed(1)}% do faturamento.`);
+    if (c.records.length && c.avgRevenueKm > 0) items.push(`Sua receita real média está em ${this.money(c.avgRevenueKm)}/km.`);
+    reasons.innerHTML = items.map(item => `<div class="flex gap-2 text-xs text-slate-600 bg-white/70 p-3 rounded-xl"><i class="fas fa-circle-info text-blue-500 mt-0.5"></i><span>${this.escape(item)}</span></div>`).join('');
+  },
+
+  prepareRecordForm(force = false) {
+    if (force || !this.$('recordDate').value) this.$('recordDate').value = this.todayKey();
+    if (force) ['recordG
