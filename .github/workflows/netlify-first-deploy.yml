@@ -1,0 +1,27 @@
+name: Netlify first deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'netlify.toml'
+      - '.github/workflows/netlify-first-deploy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Deploy to Netlify
+        run: >-
+          npx -y @netlify/mcp@latest
+          --site-id 1aee8ea6-d05c-4bbc-9341-94555a23f725
+          --proxy-path "https://netlify-mcp.netlify.app/proxy/eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..GpM_H5yuroBO6LOG.Muz0xRd5suOsE8_010ZaUPwPxnN0unulfIKDEz-aDIbcWxLsQeqXNC1YvDkPREPch5IfXaWQ0favWRXo5ovcp4MF_q6TPIPD-TXND-mTRXwZrHWFPQfB96NZ-xiU6q0KX8rpSr6dNh3E97ULjdjVK8j0b16u_QV-SQYOx8P-IkbZwzUjrOoDyUqVpL2LPm_BzLnl6Orqbwl3qL3SVHAyY0QjzhLSl2D0FCk0WNNMOA4gT2OL0LAGrMEHNj9Afnrs_GxM5VWO-7HTsN8I5ilAKz0Kl4JJogjfQ9EFCqjk7l-l-GQcc8H8NsEHWKsXKN7HGPlGEdvrln7HcU5SMwJjV_Xt5xwu_F64JeG0gyFSIcbkqSYT7oLMTS55fAqI03w2P6dy2w7Q.mYUzMqxh99O4KS5UBCo0_Q"
