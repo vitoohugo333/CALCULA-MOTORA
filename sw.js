@@ -1,42 +1,51 @@
-const VERSION='vetta-v3.5.0';
-const CACHE=VERSION;
+const CACHE = 'vetta-v3.5.1';
+const APP_SHELL = [
+  './',
+  './index.html',
+  './app.js?v=3.5.1',
+  './styles.css',
+  './manifest.webmanifest',
+  './icon.svg'
+];
 
-self.addEventListener('install',event=>{
-  event.waitUntil(self.skipWaiting());
-});
-
-self.addEventListener('activate',event=>{
-  event.waitUntil((async()=>{
-    const keys=await caches.keys();
-    await Promise.all(keys.map(key=>caches.delete(key)));
-    await self.clients.claim();
-    const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    await Promise.all(clients.map(client=>{
-      const url=new URL(client.url);
-      url.searchParams.set('vetta','3.5.0');
-      return client.navigate(url.href);
-    }));
+self.addEventListener('install', event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    await cache.addAll(APP_SHELL);
+    await self.skipWaiting();
   })());
 });
 
-self.addEventListener('fetch',event=>{
-  if(event.request.method!=='GET') return;
-  const requestUrl=new URL(event.request.url);
-  if(requestUrl.origin!==self.location.origin) return;
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
 
-  event.respondWith((async()=>{
-    try{
-      const response=await fetch(event.request,{cache:'no-store'});
-      if(response&&response.ok){
-        const cache=await caches.open(CACHE);
-        await cache.put(event.request,response.clone());
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(event.request, { cache: 'no-store' });
+      if (response.ok) {
+        const cache = await caches.open(CACHE);
+        await cache.put(event.request, response.clone());
       }
       return response;
-    }catch(error){
-      const cached=await caches.match(event.request);
-      if(cached) return cached;
-      if(event.request.mode==='navigate'){
-        return (await caches.match('./index.html'))||(await caches.match('./'));
+    } catch (error) {
+      const cached = await caches.match(event.request, { ignoreSearch: true });
+      if (cached) return cached;
+      if (event.request.mode === 'navigate') {
+        return (await caches.match('./index.html')) || (await caches.match('./'));
       }
       throw error;
     }
