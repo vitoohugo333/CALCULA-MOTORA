@@ -1,0 +1,50 @@
+(() => {
+  const RELEASE = '3.4.0';
+  const LEGACY_STORAGE_KEYS = ['vetta-driver-intelligence-v2', 'vetta-state'];
+
+  defaults.version = 7;
+  defaults.release = RELEASE;
+
+  const cleanCost = cost => {
+    const technicalName = /custos?\s+fixos?\s+(migrados?|iniciais?)/i.test(cost?.name || '');
+    const technicalId = ['fixed-migrated', 'fixed-default'].includes(cost?.id);
+    return {
+      ...cost,
+      name: technicalName || technicalId ? 'Outros custos mensais' : cost.name,
+      legacySource: false
+    };
+  };
+
+  const cleanState = state => {
+    if (!state) return state;
+    state.costs = Array.isArray(state.costs) ? state.costs.map(cleanCost) : [];
+    delete state.migrationNotice;
+    state.version = 7;
+    state.release = RELEASE;
+    return state;
+  };
+
+  const baseNormalizeState = app.normalizeState;
+  app.normalizeState = function(value) {
+    return cleanState(baseNormalizeState.call(this, value));
+  };
+
+  const baseMigrateLegacy = app.migrateLegacy;
+  app.migrateLegacy = function(value) {
+    return cleanState(baseMigrateLegacy.call(this, value));
+  };
+
+  LEGACY_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+  cleanState(app.state);
+  app.save();
+
+  document.querySelectorAll('.legacy-note').forEach(element => element.remove());
+  document.querySelectorAll('*').forEach(element => {
+    if (element.children.length === 0 && /custos?\s+fixos?\s+migrados?/i.test(element.textContent || '')) {
+      element.textContent = 'Outros custos mensais';
+    }
+  });
+
+  app.render();
+  if (app.$('appVersionLabel')) app.$('appVersionLabel').textContent = `Versão ${RELEASE}`;
+})();
