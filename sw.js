@@ -1,4 +1,4 @@
-const VERSION = 'vetta-v3.0.0';
+const VERSION = 'vetta-v3.1.0';
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const ROOT = new URL('./', self.location).href;
@@ -21,11 +21,15 @@ const APP_SHELL = [
   './parts/app-06.part',
   './parts/app-07.part',
   './parts/app-08.part',
-  './parts/app-09.part'
+  './parts/app-09.part',
+  './parts/patch-01.part',
+  './parts/patch-02.part',
+  './parts/patch-03.part',
+  './parts/patch-04.part'
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(STATIC_CACHE).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(STATIC_CACHE).then(cache => cache.addAll(APP_SHELL)));
 });
 
 self.addEventListener('activate', event => {
@@ -42,3 +46,5 @@ self.addEventListener('fetch', event => {
   }
   event.respondWith(caches.match(event.request).then(cached => { const network = fetch(event.request).then(response => { if (response && response.ok) { const copy = response.clone(); caches.open(RUNTIME_CACHE).then(cache => cache.put(event.request, copy)); } return response; }); return cached || network; }));
 });
+
+self.addEventListener('message', event => { if (event.data?.type === 'SKIP_WAITING') self.skipWaiting(); });
