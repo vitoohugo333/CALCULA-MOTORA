@@ -1,11 +1,27 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 
 const app = readFileSync('app.js', 'utf8');
 const index = readFileSync('index.html', 'utf8');
 const sw = readFileSync('sw.js', 'utf8');
 const netlify = readFileSync('netlify.toml', 'utf8');
-const accessGate = readFileSync('netlify/edge-functions/access-gate.js', 'utf8');
+const packageJson = readFileSync('package.json', 'utf8');
+
+const modularFoundation = [
+  'src/platform/manifest.js',
+  'src/platform/event-bus.js',
+  'src/platform/feature-flags.js',
+  'src/platform/module-registry.js',
+  'src/platform/diagnostics.js',
+  'src/platform/index.js',
+  'src/app/platform-runtime.js',
+  'src/modules/platform-demo/index.js',
+  'tests/platform.test.mjs',
+];
+
+for (const file of modularFoundation) {
+  assert.ok(existsSync(file), `Arquivo obrigatório ausente: ${file}`);
+}
 
 assert.equal((app.match(/app\.init\(\);/g) || []).length, 1);
 assert.equal((app.match(/saveCostButton'\)\.addEventListener\('click'/g) || []).length, 1);
@@ -26,11 +42,22 @@ assert.ok(sw.includes('caches.match(event.request, { ignoreSearch: true })'));
 assert.ok(sw.includes("caches.match('./index.html')"));
 
 assert.ok(netlify.includes('publish = "_site"'));
-assert.ok(netlify.includes('edge_functions = "netlify/edge-functions"'));
-assert.ok(netlify.includes('function = "access-gate"'));
-assert.ok(accessGate.includes("runtimeEnv('VETTA_ACCESS_CREDENTIALS_JSON')"));
-assert.ok(accessGate.includes("runtimeEnv('VETTA_ACCESS_SESSION_SECRET')"));
-assert.ok(accessGate.includes("data-vetta-access-gate=\"true\""));
-assert.equal(accessGate.match(/\b[a-f0-9]{64}\b/gi), null, 'hash real não pode estar no repositório');
+assert.ok(netlify.includes('mkdir -p _site'));
+assert.ok(!netlify.includes('edge_functions'));
+assert.ok(!netlify.includes('access-gate'));
+assert.equal(existsSync('netlify/edge-functions/access-gate.js'), false);
 
-console.log('VETTA 3.5.1 protected and offline production verification passed');
+assert.ok(packageJson.includes('"check:platform"'));
+assert.ok(packageJson.includes('tests/platform.test.mjs'));
+assert.ok(!packageJson.includes('access-gate.test.mjs'));
+
+const runtime = readFileSync('src/app/platform-runtime.js', 'utf8');
+const registry = readFileSync('src/platform/module-registry.js', 'utf8');
+assert.ok(runtime.includes('createVettaPlatform'));
+assert.ok(runtime.includes("'platform-demo': false"));
+assert.ok(registry.includes('register'));
+assert.ok(registry.includes('enable'));
+assert.ok(registry.includes('disable'));
+assert.ok(registry.includes('remove'));
+
+console.log('VETTA 3.5.1 public, offline and modular production verification passed');
