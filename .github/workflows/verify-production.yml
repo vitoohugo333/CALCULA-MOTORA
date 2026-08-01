@@ -40,6 +40,11 @@ jobs:
           assert.ok(!app.includes("'./parts/"), 'bundle não pode carregar parts no navegador');
           assert.ok(!app.includes('new Function'), 'bundle não pode executar código montado dinamicamente');
           assert.ok(!app.includes('stopImmediatePropagation'), 'bundle não pode bloquear listeners concorrentes');
+          assert.ok(!app.includes("const RELEASE = '3.1.0'"), 'versão 3.1.0 não pode permanecer no bundle');
+          assert.ok(!app.includes("const RELEASE = '3.2.0'"), 'versão 3.2.0 não pode permanecer no bundle');
+          assert.ok(!app.includes("const RELEASE = '3.3.0'"), 'versão 3.3.0 não pode permanecer no bundle');
+          assert.ok(!app.includes('vettaPatchStyles'), 'marcador de patch não pode permanecer no bundle');
+          assert.ok(!app.includes('Custos fixos migrados'), 'texto técnico antigo não pode permanecer no bundle');
           assert.ok(app.includes('type="button" id="saveCostButton"'), 'salvar despesa deve ser type button');
           assert.ok(app.includes('type="button" id="closeCostModal"'), 'fechar modal deve ser type button');
           assert.ok(app.includes("const APP_RELEASE = '3.5.1'"), 'bundle deve declarar a versão 3.5.1');
