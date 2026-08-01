@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -21,46 +21,20 @@ jobs:
         with:
           node-version: 22
 
-      - name: Prepare production bundle
+      - name: Prepare exact production files
         run: |
-          if [ -d parts ]; then
-            python3 scripts/build-production.py
-          else
-            rm -rf _site
-            mkdir _site
-            cp index.html app.js styles.css manifest.webmanifest icon.svg sw.js netlify.toml _site/
-          fi
+          test ! -d parts
+          test ! -f vetta-3.4.3.js
+          test ! -f vetta-3.4.4.js
+          rm -rf _site
+          mkdir _site
+          cp index.html app.js styles.css manifest.webmanifest icon.svg sw.js netlify.toml _site/
 
       - name: Verify structure and syntax
         run: |
-          node --check _site/app.js
-          node --check _site/sw.js
-          node <<'NODE'
-          const fs = require('node:fs');
-          const assert = require('node:assert/strict');
-          const app = fs.readFileSync('_site/app.js', 'utf8');
-          const index = fs.readFileSync('_site/index.html', 'utf8');
-          const sw = fs.readFileSync('_site/sw.js', 'utf8');
-
-          assert.equal((app.match(/app\.init\(\);/g) || []).length, 1, 'app deve inicializar exatamente uma vez');
-          assert.equal((app.match(/saveCostButton'\)\.addEventListener\('click'/g) || []).length, 1, 'salvar despesa deve ter um único listener');
-          assert.ok(!app.includes("'./parts/"), 'bundle não pode carregar parts no navegador');
-          assert.ok(!app.includes('new Function'), 'bundle não pode executar código montado dinamicamente');
-          assert.ok(!app.includes('stopImmediatePropagation'), 'bundle não pode bloquear listeners concorrentes');
-          assert.ok(!app.includes("const RELEASE = '3.1.0'"), 'versão 3.1.0 não pode permanecer no bundle');
-          assert.ok(!app.includes("const RELEASE = '3.2.0'"), 'versão 3.2.0 não pode permanecer no bundle');
-          assert.ok(!app.includes("const RELEASE = '3.3.0'"), 'versão 3.3.0 não pode permanecer no bundle');
-          assert.ok(!app.includes('vettaPatchStyles'), 'marcador de patch não pode permanecer no bundle');
-          assert.ok(!app.includes('Custos fixos migrados'), 'texto técnico antigo não pode permanecer no bundle');
-          assert.ok(app.includes('type="button" id="saveCostButton"'), 'salvar despesa deve ser type button');
-          assert.ok(app.includes('type="button" id="closeCostModal"'), 'fechar modal deve ser type button');
-          assert.ok(app.includes("const APP_RELEASE = '3.5.1'"), 'bundle deve declarar a versão 3.5.1');
-          assert.ok(index.includes('app.js?v=3.5.1'), 'HTML deve carregar o bundle 3.5.1');
-          assert.ok(!index.includes('appRoot'), 'HTML não pode depender do carregador antigo');
-          assert.ok(!index.includes('vetta-3.4'), 'HTML não pode carregar recuperadores antigos');
-          assert.ok(sw.includes("vetta-v3.5.1"), 'service worker deve usar cache 3.5.1');
-          console.log('Estrutura consolidada validada');
-          NODE
+          node --check app.js
+          node --check sw.js
+          node tests/verify-production.mjs
 
       - name: Install browser tests
         run: npm install --no-audit --no-fund
@@ -70,87 +44,3 @@ jobs:
 
       - name: Test cost modal end to end
         run: npm run test:e2e
-
-      - name: Upload verified production bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: vetta-production-3.5.1
-          path: _site
-          if-no-files-found: error
-          retention-days: 3
-
-  materialize:
-    needs: verify
-    if: github.event_name == 'pull_request' && github.head_ref == 'fix/production-monolith-3.5.1' && github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout source branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-
-      - name: Download verified bundle
-        uses: actions/download-artifact@v4
-        with:
-          name: vetta-production-3.5.1
-          path: _verified
-
-      - name: Replace legacy runtime with verified files
-        env:
-          TARGET_BRANCH: ${{ github.head_ref }}
-        run: |
-          cp _verified/index.html index.html
-          cp _verified/app.js app.js
-          cp _verified/sw.js sw.js
-          cp _verified/netlify.toml netlify.toml
-
-          rm -rf parts
-          rm -f vetta-3.4.3.js vetta-3.4.4.js
-          rm -f scripts/build-production.py
-          rmdir scripts 2>/dev/null || true
-
-          cat > package.json <<'JSON'
-          {
-            "name": "vetta-driver-intelligence",
-            "private": true,
-            "version": "3.5.1",
-            "type": "module",
-            "scripts": {
-              "test:e2e": "playwright test",
-              "check:production": "node --check app.js && node --check sw.js && node tests/verify-production.mjs && playwright test"
-            },
-            "devDependencies": {
-              "@playwright/test": "^1.54.2"
-            }
-          }
-          JSON
-
-          cat > tests/verify-production.mjs <<'TEST'
-          import { readFileSync } from 'node:fs';
-          import assert from 'node:assert/strict';
-
-          const app = readFileSync('app.js', 'utf8');
-          const index = readFileSync('index.html', 'utf8');
-          const sw = readFileSync('sw.js', 'utf8');
-
-          assert.equal((app.match(/app\.init\(\);/g) || []).length, 1);
-          assert.equal((app.match(/saveCostButton'\)\.addEventListener\('click'/g) || []).length, 1);
-          for (const forbidden of ["'./parts/", 'new Function', 'stopImmediatePropagation', "const RELEASE = '3.1.0'", "const RELEASE = '3.2.0'", "const RELEASE = '3.3.0'", 'vettaPatchStyles', 'Custos fixos migrados']) {
-            assert.ok(!app.includes(forbidden), `Conteúdo proibido: ${forbidden}`);
-          }
-          assert.ok(app.includes('type="button" id="saveCostButton"'));
-          assert.ok(app.includes('type="button" id="closeCostModal"'));
-          assert.ok(app.includes("const APP_RELEASE = '3.5.1'"));
-          assert.ok(index.includes('app.js?v=3.5.1'));
-          assert.ok(!index.includes('appRoot'));
-          assert.ok(sw.includes("vetta-v3.5.1"));
-          console.log('VETTA 3.5.1 production verification passed');
-          TEST
-
-          rm -rf _verified
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "release: materializa VETTA 3.5.1 sem runtime legado"
-          git push origin "HEAD:${TARGET_BRANCH}"
