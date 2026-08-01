@@ -52,12 +52,16 @@ jobs:
               raise SystemExit(f'Esperava um app.init() no código-base; encontrei {source.count(init_marker)}')
           source = source.replace(init_marker, '\n', 1)
 
-          source = source.replace(
-              "this.$('saveCostButton').addEventListener('click', () => this.saveCost());",
-              "this.$('saveCostButton').addEventListener('click', event => { event.preventDefault(); this.saveCost(); });"
-          )
-          source = source.replace('<button id="saveCostButton"', '<button type="button" id="saveCostButton"')
-          source = source.replace('<button id="closeCostModal"', '<button type="button" id="closeCostModal"')
+          old_listener = "this.$('saveCostButton').addEventListener('click', () => this.saveCost());"
+          new_listener = "this.$('saveCostButton').addEventListener('click', event => { event.preventDefault(); this.saveCost(); });"
+          if source.count(old_listener) != 1:
+              raise SystemExit(f'Esperava um listener-base de despesa; encontrei {source.count(old_listener)}')
+          source = source.replace(old_listener, new_listener, 1)
+
+          if source.count('<button id="saveCostButton"') != 1:
+              raise SystemExit('Botão de salvar despesa não encontrado uma única vez')
+          source = source.replace('<button id="saveCostButton"', '<button type="button" id="saveCostButton"', 1)
+          source = source.replace('<button id="closeCostModal"', '<button type="button" id="closeCostModal"', 1)
 
           source += f'''\n\nconst APP_RELEASE = '{release}';
           const CURRENT_STATE_VERSION = 9;
@@ -152,18 +156,6 @@ jobs:
           console.log('VETTA monolith checks passed');
           NODE
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload static site
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: _site
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
       - name: Persist concise source on main
         if: success() && hashFiles('parts/**') != ''
         shell: bash
@@ -171,7 +163,7 @@ jobs:
           cp _site/index.html index.html
           cp _site/app.js app.js
           cp _site/sw.js sw.js
-          rm -rf parts _site
+          rm -rf parts
           rm -f vetta-3.4.3.js vetta-3.4.4.js
           mkdir -p tests
 
@@ -216,7 +208,6 @@ jobs:
               runs-on: ubuntu-latest
               environment:
                 name: github-pages
-                url: ${{ steps.deployment.outputs.page_url }}
               steps:
                 - name: Checkout
                   uses: actions/checkout@v6
@@ -252,8 +243,21 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add -u
+          git add tests/verify-monolith.mjs
           git commit -m "refactor: persiste VETTA 3.5.0 em código principal"
           git fetch origin main
           git rebase origin/main
           git push origin HEAD:main
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
