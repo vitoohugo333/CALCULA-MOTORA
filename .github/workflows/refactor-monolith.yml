@@ -3,7 +3,7 @@ name: Consolidate VETTA source
 on:
   push:
     branches:
-      - refactor-monolith-3-5-0
+      - main
 
 permissions:
   contents: write
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: refactor-monolith-3-5-0
+          ref: main
 
       - name: Build single-source application
         shell: bash
@@ -147,4 +147,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "refactor: consolida VETTA 3.5.0 em código principal"
-          git push origin HEAD:refactor-monolith-3-5-0
+          git push origin HEAD:main
