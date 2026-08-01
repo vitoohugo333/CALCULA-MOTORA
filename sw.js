@@ -1,61 +1,44 @@
-const CACHE = 'vetta-v2-2026-08-01';
+const VERSION = 'vetta-v3.0.0';
+const STATIC_CACHE = `${VERSION}-static`;
+const RUNTIME_CACHE = `${VERSION}-runtime`;
 const ROOT = new URL('./', self.location).href;
-const INDEX = new URL('index.html', ROOT).href;
 const APP_SHELL = [
-  ROOT,
-  INDEX,
-  new URL('app.js', ROOT).href,
-  new URL('styles.css', ROOT).href,
-  new URL('manifest.webmanifest', ROOT).href,
-  new URL('icon.svg', ROOT).href
+  './',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './manifest.webmanifest',
+  './icon.svg',
+  './parts/ui-01.part',
+  './parts/ui-02.part',
+  './parts/ui-03.part',
+  './parts/ui-04.part',
+  './parts/app-01.part',
+  './parts/app-02.part',
+  './parts/app-03.part',
+  './parts/app-04.part',
+  './parts/app-05.part',
+  './parts/app-06.part',
+  './parts/app-07.part',
+  './parts/app-08.part',
+  './parts/app-09.part'
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil(caches.open(STATIC_CACHE).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => ![STATIC_CACHE, RUNTIME_CACHE].includes(key)).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', event => {
-  const request = event.request;
-  if (request.method !== 'GET') return;
-
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE).then(cache => {
-            cache.put(request, copy);
-            cache.put(INDEX, response.clone());
-          });
-          return response;
-        })
-        .catch(async () => (await caches.match(request)) || (await caches.match(INDEX)))
-    );
+  if (event.request.method !== 'GET') return;
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) return;
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request).then(response => { const copy = response.clone(); caches.open(RUNTIME_CACHE).then(cache => cache.put(event.request, copy)); return response; }).catch(() => caches.match(event.request).then(cached => cached || caches.match(ROOT) || caches.match('./index.html'))));
     return;
   }
-
-  event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-      return fetch(request).then(response => {
-        if (response.ok || response.type === 'opaque') {
-          const copy = response.clone();
-          caches.open(CACHE).then(cache => cache.put(request, copy));
-        }
-        return response;
-      });
-    })
-  );
+  event.respondWith(caches.match(event.request).then(cached => { const network = fetch(event.request).then(response => { if (response && response.ok) { const copy = response.clone(); caches.open(RUNTIME_CACHE).then(cache => cache.put(event.request, copy)); } return response; }); return cached || network; }));
 });
