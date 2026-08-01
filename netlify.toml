@@ -1,3 +1,4 @@
+# VETTA static PWA deployment
 [build]
   publish = "."
 
