@@ -1,0 +1,14 @@
+{
+  "name": "vetta-driver-intelligence",
+  "private": true,
+  "version": "3.5.1",
+  "type": "module",
+  "scripts": {
+    "build:production": "python3 scripts/build-production.py",
+    "test:e2e": "playwright test",
+    "check:production": "npm run build:production && node --check _site/app.js && node --check _site/sw.js && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2"
+  }
+}
