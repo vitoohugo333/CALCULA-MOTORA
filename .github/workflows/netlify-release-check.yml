@@ -36,13 +36,32 @@ jobs:
           node --check sw.js
           node tests/verify-production.mjs
 
-      - name: Verify Netlify credential scope
+      - name: Normalize Netlify credential in memory
         shell: bash
         run: |
           test -n "$NETLIFY_AUTH_TOKEN" || { echo 'NETLIFY_AUTH_TOKEN ausente'; exit 1; }
+          CLEAN_TOKEN="$(printf '%s' "$NETLIFY_AUTH_TOKEN" | tr -d '\r\n')"
+          CLEAN_TOKEN="${CLEAN_TOKEN#NETLIFY_AUTH_TOKEN=}"
+          CLEAN_TOKEN="${CLEAN_TOKEN#Bearer }"
+          CLEAN_TOKEN="${CLEAN_TOKEN#\"}"
+          CLEAN_TOKEN="${CLEAN_TOKEN%\"}"
+          CLEAN_TOKEN="${CLEAN_TOKEN#\'}"
+          CLEAN_TOKEN="${CLEAN_TOKEN%\'}"
+          CLEAN_TOKEN="$(printf '%s' "$CLEAN_TOKEN" | tr -d '[:space:]')"
+          test -n "$CLEAN_TOKEN" || { echo 'Credencial vazia após normalização'; exit 1; }
+          if [[ ! "$CLEAN_TOKEN" =~ ^[A-Za-z0-9._~-]+$ ]]; then
+            echo 'Credencial contém caracteres incompatíveis mesmo após normalização.'
+            exit 1
+          fi
+          echo "::add-mask::$CLEAN_TOKEN"
+          printf 'NETLIFY_AUTH_TOKEN_CLEAN=%s\n' "$CLEAN_TOKEN" >> "$GITHUB_ENV"
+
+      - name: Verify Netlify credential scope
+        shell: bash
+        run: |
           npx --yes netlify-cli@latest sites:list \
             --json \
-            --auth="$NETLIFY_AUTH_TOKEN" > /tmp/netlify-sites.json
+            --auth="$NETLIFY_AUTH_TOKEN_CLEAN" > /tmp/netlify-sites.json
           node <<'NODE'
           const fs = require('node:fs');
           const sites = JSON.parse(fs.readFileSync('/tmp/netlify-sites.json', 'utf8'));
@@ -60,7 +79,7 @@ jobs:
             --no-build \
             --dir=. \
             --site="$NETLIFY_SITE_NAME" \
-            --auth="$NETLIFY_AUTH_TOKEN" \
+            --auth="$NETLIFY_AUTH_TOKEN_CLEAN" \
             --message="VETTA 3.5.1 ${GITHUB_SHA}"
 
       - name: Verify live Netlify release
