@@ -26,20 +26,20 @@ jobs:
           test ! -d parts
           test ! -f vetta-3.4.3.js
           test ! -f vetta-3.4.4.js
+          test ! -f netlify/edge-functions/access-gate.js
           rm -rf _site
           mkdir _site
           cp index.html app.js styles.css manifest.webmanifest icon.svg sw.js _site/
 
-      - name: Verify structure, access and syntax
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify public production and modular foundation
         run: |
           node --check app.js
           node --check sw.js
-          node --check netlify/edge-functions/access-gate.js
+          npm run check:platform
           node tests/verify-production.mjs
-          node tests/access-gate.test.mjs
-
-      - name: Install browser tests
-        run: npm install --no-audit --no-fund
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
