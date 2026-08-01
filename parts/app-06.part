@@ -1,0 +1,38 @@
+lass="bg-purple-50 rounded-2xl p-4"><span class="label-micro !text-purple-700">Taxas do bruto</span><strong class="text-purple-600">${(summary.percent * 100).toFixed(1)}%</strong></div>`;
+    if (!this.state.costs.length) this.$('costList').innerHTML = '<p class="text-sm text-slate-400 text-center py-5">Nenhum custo cadastrado.</p>';
+    else this.$('costList').innerHTML = this.state.costs.map(cost => `<article class="cost-row ${cost.active ? '' : 'opacity-50'}"><div class="flex justify-between gap-3"><div><div class="flex items-center gap-2"><strong>${this.escape(cost.name)}</strong><span class="cost-kind">${this.costKindLabel(cost.kind)}</span></div><span class="text-xs text-slate-500">${cost.category === 'reserve' ? 'Reserva/objetivo' : 'Obrigação'} · ${this.costValueText(cost)}</span></div><button data-cost-action="toggle" data-cost-id="${cost.id}" class="toggle ${cost.active ? 'active' : ''}" aria-label="Ativar ou desativar"></button></div><div class="flex justify-end gap-2 mt-3 pt-3 border-t border-slate-50"><button data-cost-action="edit" data-cost-id="${cost.id}" class="px-3 py-2 rounded-xl bg-blue-50 text-blue-600 text-[10px] font-extrabold">EDITAR</button><button data-cost-action="delete" data-cost-id="${cost.id}" class="px-3 py-2 rounded-xl bg-red-50 text-red-500 text-[10px] font-extrabold">EXCLUIR</button></div></article>`).join('');
+  },
+
+  costKindLabel(kind) { return ({ monthly: 'mensal', weekly: 'semanal', per_km: 'por km', percent: 'percentual', one_time: 'único' })[kind] || kind; },
+  costValueText(cost) { if (cost.kind === 'percent') return `${this.number(cost.value).toFixed(1)}% do faturamento`; if (cost.kind === 'per_km') return `${this.money(cost.value)}/km`; if (cost.kind === 'one_time') return `${this.money(cost.value)} em ${cost.month || this.monthKey()}`; return `${this.money(cost.value)}/${cost.kind === 'weekly' ? 'semana' : 'mês'}`; },
+
+  openCostModal(cost = null) {
+    this.$('costModalTitle').textContent = cost ? 'Editar custo' : 'Adicionar custo'; this.$('costId').value = cost?.id || ''; this.$('costName').value = cost?.name || ''; this.$('costCategory').value = cost?.category || 'obligation'; this.$('costKind').value = cost?.kind || 'monthly'; this.$('costValue').value = cost?.value ?? ''; this.$('costMonth').value = cost?.month || this.monthKey(); this.syncCostModal(); this.$('costModal').classList.remove('hidden');
+  },
+  syncCostModal() { const kind = this.$('costKind').value; this.$('costMonthWrap').classList.toggle('hidden', kind !== 'one_time'); this.$('costValuePrefix').textContent = kind === 'percent' ? '%' : 'R$'; this.$('costValueLabel').textContent = kind === 'per_km' ? 'Valor por km' : kind === 'percent' ? 'Percentual' : 'Valor'; },
+  saveCost() { const id = this.$('costId').value || this.uid('cost'), name = this.$('costName').value.trim(), value = this.number(this.$('costValue').value), kind = this.$('costKind').value; if (!name || value <= 0) return this.toast('Informe nome e valor do custo.'); const existing = this.state.costs.find(cost => cost.id === id); const cost = { id, name, category: this.$('costCategory').value, kind, value, active: existing?.active ?? true, month: kind === 'one_time' ? this.$('costMonth').value : undefined }; const index = this.state.costs.findIndex(item => item.id === id); if (index >= 0) this.state.costs[index] = cost; else this.state.costs.push(cost); this.save(); this.closeModal('costModal'); this.render(); this.toast(index >= 0 ? 'Custo atualizado.' : 'Custo adicionado e meta recalculada.'); },
+  handleCostAction(event) { const button = event.target.closest('[data-cost-action]'); if (!button) return; const index = this.state.costs.findIndex(cost => cost.id === button.dataset.costId); if (index < 0) return; if (button.dataset.costAction === 'edit') this.openCostModal(this.state.costs[index]); if (button.dataset.costAction === 'toggle') { this.state.costs[index].active = !this.state.costs[index].active; this.save(); this.render(); } if (button.dataset.costAction === 'delete' && confirm(`Excluir “${this.state.costs[index].name}”?`)) { this.state.costs.splice(index, 1); this.save(); this.render(); this.toast('Custo excluído.'); } },
+
+  learningSuggestions() {
+    const recent = [...this.state.records].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 14);
+    if (recent.length < 3) return { recent, revenue: null, efficiency: null };
+    const normalized = recent.map(record => this.recordNumbers(record));
+    const totalKm = normalized.reduce((sum, record) => sum + record.km, 0), totalGross = normalized.reduce((sum, record) => sum + record.gross, 0);
+    const avgRevenue = totalKm > 0 ? totalGross / totalKm : 0;
+    const revenue = avgRevenue > 0 && Math.abs(avgRevenue - this.state.revenueKm) / Math.max(0.01, this.state.revenueKm) >= 0.04 ? avgRevenue : null;
+    const fuelRecords = recent.filter(record => this.number(record.fuelSpend) > 0 && this.number(record.km) > 0 && (!record.fuelTypeSnapshot || record.fuelTypeSnapshot === this.state.fuel.type));
+    let efficiency = null;
+    if (fuelRecords.length >= 3) { const km = fuelRecords.reduce((sum, record) => sum + this.number(record.km), 0), spend = fuelRecords.reduce((sum, record) => sum + this.number(record.fuelSpend), 0), costKm = spend / Math.max(1, km), suggestion = this.state.fuel.price / Math.max(0.01, costKm); if (suggestion > 1 && suggestion < 40 && Math.abs(suggestion - this.state.fuel.efficiency) / Math.max(0.01, this.state.fuel.efficiency) >= 0.06) efficiency = suggestion; }
+    return { recent, revenue, efficiency };
+  },
+
+  renderLearning() {
+    const suggestion = this.learningSuggestions();
+    if (suggestion.recent.length < 3) { this.$('learningText').textContent = `Registre mais ${3 - suggestion.recent.length} dia(s) para receber a primeira leitura.`; this.$('learningActions').innerHTML = ''; return; }
+    const actions = [];
+    if (suggestion.revenue) actions.push(`<div class="bg-white p-4 rounded-2xl"><p class="text-xs text-slate-600">Sua média real foi <strong>${this.money(suggestion.revenue)}/km</strong>, enquanto o parâmetro está em ${this.money(this.state.revenueKm)}/km.</p><button data-learning="revenue" data-value="${suggestion.revenue}" class="mt-3 text-[10px] font-extrabold text-purple-600">ATUALIZAR RECEITA MÉDIA</button></div>`);
+    if (suggestion.efficiency) actions.push(`<div class="bg-white p-4 rounded-2xl"><p class="text-xs text-slate-600">Pelos abastecimentos informados, o rendimento estimado é <strong>${suggestion.efficiency.toFixed(1)} km/${this.state.fuel.unit}</strong>.</p><button data-learning="efficiency" data-value="${suggestion.efficiency}" class="mt-3 text-[10px] font-extrabold text-purple-600">ATUALIZAR RENDIMENTO</button></div>`);
+    this.$('learningText').textContent = actions.length ? 'Há sugestões baseadas nos seus próprios dias. Nada muda sem sua confirmação.' : 'Seus parâmetros estão coerentes com os registros recentes.';
+    this.$('learningActions').innerHTML = actions.join('');
+  },
+  handleLearningAction(event) { const button = event.target.closest('[data-learning]'); if (!button) return; if (button.dataset.learning === 'revenue') this.state.revenueKm = this.number(button.dataset.value); if (button.dataset.learning === 'efficiency') this.state.fuel.efficiency = this.number(button.dataset.value); this.save(); this.syncInputs(); this.render(); this.toast('Parâmetro atualizado co
