@@ -1,0 +1,50 @@
+ross', 'recordKm', 'recordHours', 'recordFuel'].forEach(id => this.$(id).value = '');
+    this.renderRecordPreview();
+  },
+
+  recordDraft() {
+    const date = this.$('recordDate').value || this.todayKey(); const ctx = this.monthContext(this.parseDate(date)); const costs = this.costContext(this.parseDate(date));
+    return { id: `day-${date}`, date, gross: this.number(this.$('recordGross').value), km: this.number(this.$('recordKm').value), hours: this.number(this.$('recordHours').value), fuelSpend: this.number(this.$('recordFuel').value), fuelTypeSnapshot: this.state.fuel.type, fuelLabelSnapshot: this.state.fuel.label, fuelPriceSnapshot: this.state.fuel.price, fuelCostKmSnapshot: this.fuelCostKm(), perKmCostSnapshot: costs.perKm, percentCostSnapshot: costs.percent, fixedShareSnapshot: costs.monthlyFixed / Math.max(1, ctx.plannedDays), updatedAt: new Date().toISOString() };
+  },
+
+  renderRecordPreview() {
+    const draft = this.recordDraft(), numbers = this.recordNumbers(draft), c = this.calculations();
+    this.$('previewCost').textContent = this.money(numbers.fuel + numbers.variable + numbers.percentCost + numbers.fixedShare);
+    this.$('previewNet').textContent = this.money(numbers.net);
+    this.$('previewRevenueKm').textContent = this.money(numbers.revenuePerKm);
+    const delta = numbers.contribution - c.dailyContribution;
+    this.$('previewDelta').textContent = `${delta >= 0 ? '+' : ''}${this.money(delta)}`;
+    this.$('previewDelta').className = `text-lg tabular ${delta >= 0 ? 'text-emerald-600' : 'text-red-500'}`;
+    if (!draft.gross || !draft.km) this.$('previewExplanation').textContent = 'Preencha faturamento e quilômetros. Os custos serão estimados automaticamente.';
+    else if (delta >= 0) this.$('previewExplanation').textContent = `Este dia gerou ${this.money(delta)} a mais de contribuição que a meta atual.`;
+    else this.$('previewExplanation').textContent = `A combinação de faturamento e rodagem deixou o resultado ${this.money(Math.abs(delta))} abaixo da contribuição necessária.`;
+    const exists = this.state.records.some(record => record.date === draft.date); this.$('saveDayButton').innerHTML = exists ? '<i class="fas fa-pen mr-2"></i>Atualizar este dia' : '<i class="fas fa-check mr-2"></i>Fechar e salvar o dia';
+  },
+
+  saveDay() {
+    const draft = this.recordDraft();
+    if (!draft.date || draft.gross <= 0 || draft.km <= 0) return this.toast('Informe faturamento e quilômetros maiores que zero.');
+    const index = this.state.records.findIndex(record => record.date === draft.date);
+    if (index >= 0) this.state.records[index] = { ...this.state.records[index], ...draft }; else this.state.records.push({ ...draft, createdAt: new Date().toISOString() });
+    this.state.records.sort((a, b) => a.date.localeCompare(b.date)); this.save(); this.render(); this.toast(index >= 0 ? 'Dia atualizado.' : 'Dia salvo e meta recalculada.'); this.prepareRecordForm(true); this.showView('dashboard');
+  },
+
+  handleHistoryAction(event) {
+    const button = event.target.closest('[data-action]'); if (!button) return;
+    const date = button.dataset.date, action = button.dataset.action;
+    if (action === 'edit') { const record = this.state.records.find(item => item.date === date); if (!record) return; this.$('recordDate').value = record.date; this.$('recordGross').value = record.gross; this.$('recordKm').value = record.km; this.$('recordHours').value = record.hours || ''; this.$('recordFuel').value = record.fuelSpend || ''; this.showView('day'); this.renderRecordPreview(); }
+    if (action === 'delete' && confirm('Excluir este registro? A meta será recalculada.')) { this.state.records = this.state.records.filter(item => item.date !== date); this.save(); this.render(); this.toast('Registro excluído.'); }
+  },
+
+  renderHistory(existing = null) {
+    const c = existing || this.calculations(), records = [...c.records].sort((a, b) => b.date.localeCompare(a.date));
+    this.$('historyDays').textContent = records.length; this.$('historyRevenueKm').textContent = this.money(c.avgRevenueKm); this.$('historyNet').textContent = this.money(records.reduce((sum, record) => sum + record.net, 0), 0); this.$('historyCount').textContent = `${records.length} ${records.length === 1 ? 'REGISTRO' : 'REGISTROS'}`;
+    if (!records.length) this.$('historyList').innerHTML = '<div class="card-vetta p-8 text-center text-sm text-slate-400">Nenhum dia registrado ainda.</div>';
+    else this.$('historyList').innerHTML = records.map(record => { const date = this.parseDate(record.date).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }); return `<article class="history-row"><div class="flex justify-between items-start gap-3"><div><span class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">${date}</span><strong class="block text-xl mt-1 tabular">${this.money(record.gross)}</strong><span class="text-xs text-slate-500">${this.integer(record.km)} km · ${this.money(record.revenuePerKm)}/km</span></div><div class="text-right"><span class="label-micro">Líquido estimado</span><strong class="${record.net >= 0 ? 'text-emerald-600' : 'text-red-500'} tabular">${this.money(record.net)}</strong></div></div><div class="flex justify-end gap-2 mt-3 pt-3 border-t border-slate-50"><button data-action="edit" data-date="${record.date}" class="px-3 py-2 rounded-xl bg-blue-50 text-blue-600 text-[10px] font-extrabold">EDITAR</button><button data-action="delete" data-date="${record.date}" class="px-3 py-2 rounded-xl bg-red-50 text-red-500 text-[10px] font-extrabold">EXCLUIR</button></div></article>`; }).join('');
+    if (records.length < 2) this.$('historyInsight').innerHTML = '<span class="label-micro !text-emerald-700">Comparação inteligente</span><h3 class="font-extrabold text-lg">Ainda não há dias suficientes</h3><p class="text-xs text-slate-500 mt-2">Depois de dois registros, o VETTA mostra qual dia realmente rendeu mais.</p>';
+    else { const best = [...records].sort((a, b) => b.net - a.net)[0], highest = [...records].sort((a, b) => b.gross - a.gross)[0], same = best.date === highest.date; this.$('historyInsight').innerHTML = `<span class="label-micro !text-emerald-700">Comparação inteligente</span><h3 class="font-extrabold text-lg">${same ? 'Seu maior faturamento também foi o melhor dia' : 'Faturar mais não significou ganhar mais'}</h3><p class="text-xs text-slate-500 mt-2">${same ? `Em ${this.parseDate(best.date).toLocaleDateString('pt-BR')}, você gerou ${this.money(best.net)} líquidos.` : `O dia de ${this.money(highest.gross)} bruto rendeu ${this.money(highest.net)} líquido, enquanto seu melhor dia líquido chegou a ${this.money(best.net)} com ${this.integer(best.km)} km.`}</p>`; }
+  },
+
+  renderCosts(existing = null) {
+    const c = existing || this.calculations(), summary = c.costs;
+    this.$('costSummary').innerHTML = `<div class="bg-red-50 rounded-2xl p-4"><span class="label-micro !text-red-700">Obrigações/mês</span><strong class="text-red-600">${this.money(summary.obligations)}</strong></div><div class="bg-emerald-50 rounded-2xl p-4"><span class="label-micro !text-emerald-700">Reservas/mês</span><strong class="text-emerald-600">${this.money(summary.reserves)}</strong></div><div class="bg-amber-50 rounded-2xl p-4"><span class="label-micro !text-amber-700">Custos por km</span><strong class="text-amber-600">${this.money(summary.perKm)}</strong></div><div c
