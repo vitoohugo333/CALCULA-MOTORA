@@ -1,9 +1,11 @@
-name: Deploy VETTA to GitHub Pages
+name: Deploy VETTA Development to GitHub Pages
 
 on:
   push:
     branches:
-      - main
+      - 'feature/**'
+      - 'refactor/**'
+      - develop
   workflow_dispatch:
 
 permissions:
@@ -12,7 +14,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: github-pages-development
   cancel-in-progress: true
 
 jobs:
@@ -25,44 +27,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify protected production source
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify development candidate
         run: |
           node --check app.js
           node --check sw.js
-          node --check netlify/edge-functions/access-gate.js
+          npm run check:platform
           node tests/verify-production.mjs
-          node tests/access-gate.test.mjs
 
-      - name: Prepare protected destination notice
+      - name: Prepare GitHub Pages development site
         run: |
           rm -rf _site
-          mkdir _site
-          cat > _site/index.html <<'HTML'
-          <!doctype html>
-          <html lang="pt-BR">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width,initial-scale=1">
-            <meta name="robots" content="noindex,nofollow">
-            <meta http-equiv="refresh" content="0;url=https://vetta-driver-intelligence.netlify.app/">
-            <title>VETTA | Demonstração protegida</title>
-          </head>
-          <body>
-            <p>A demonstração protegida está disponível em <a href="https://vetta-driver-intelligence.netlify.app/">vetta-driver-intelligence.netlify.app</a>.</p>
-          </body>
-          </html>
-          HTML
-          cp sw.js _site/sw.js
-          if [ -f .nojekyll ]; then cp .nojekyll _site/; fi
+          mkdir -p _site
+          cp index.html app.js styles.css manifest.webmanifest icon.svg sw.js _site/
+          if [ -d src ]; then cp -R src _site/src; fi
+          touch _site/.nojekyll
+          cat > _site/robots.txt <<'TXT'
+          User-agent: *
+          Disallow: /
+          TXT
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload static site
+      - name: Upload development site
         uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy development site
         id: deployment
         uses: actions/deploy-pages@v4
