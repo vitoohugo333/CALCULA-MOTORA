@@ -1,6 +1,7 @@
 [build]
   command = "mkdir -p _site && find . -mindepth 1 -maxdepth 1 ! -name _site ! -name .git ! -name node_modules -exec cp -R {} _site/ \\;"
   publish = "_site"
+  ignore = "if [ \"$CONTEXT\" = \"production\" ]; then exit 1; else exit 0; fi"
 
 [build.environment]
   NODE_VERSION = "22"
