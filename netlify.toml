@@ -1,5 +1,5 @@
 [build]
-  publish = "_site"
+  publish = "."
   edge_functions = "netlify/edge-functions"
 
 [build.environment]
