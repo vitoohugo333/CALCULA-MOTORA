@@ -19,21 +19,5 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "Registrar meu dia",
-      "short_name": "Registrar",
-      "description": "Abrir o fechamento diário do VETTA.",
-      "url": "./?view=day",
-      "icons": [{ "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml" }]
-    },
-    {
-      "name": "Ver histórico",
-      "short_name": "Histórico",
-      "description": "Consultar os resultados registrados.",
-      "url": "./?view=history",
-      "icons": [{ "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml" }]
-    }
   ]
 }
