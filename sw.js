@@ -1,4 +1,4 @@
-const VERSION = 'vetta-v3.3.0';
+const VERSION = 'vetta-v3.4.0';
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const ROOT = new URL('./', self.location).href;
@@ -27,7 +27,8 @@ const APP_SHELL = [
   './parts/patch-03.part',
   './parts/patch-04.part',
   './parts/patch-05.part',
-  './parts/patch-06.part'
+  './parts/patch-06.part',
+  './parts/patch-07.part'
 ];
 
 self.addEventListener('install', event => {
