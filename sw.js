@@ -1,4 +1,4 @@
-const VERSION='vetta-v3.4.4';
+const VERSION='vetta-v3.5.0';
 const CACHE=VERSION;
 
 self.addEventListener('install',event=>{
@@ -13,7 +13,7 @@ self.addEventListener('activate',event=>{
     const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     await Promise.all(clients.map(client=>{
       const url=new URL(client.url);
-      url.searchParams.set('vetta','3.4.4');
+      url.searchParams.set('vetta','3.5.0');
       return client.navigate(url.href);
     }));
   })());

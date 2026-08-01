@@ -1,86 +1,106 @@
-(async()=>{
-  const RELEASE='3.4.2';
-  const uiParts=['./parts/ui-01.part','./parts/ui-02.part','./parts/ui-03.part','./parts/ui-04.part'];
-  const appParts=['./parts/app-01.part','./parts/app-02.part','./parts/app-03.part','./parts/app-04.part','./parts/app-05.part','./parts/app-06.part','./parts/app-07.part','./parts/app-08.part','./parts/app-09.part','./parts/patch-01.part','./parts/patch-02.part','./parts/patch-03.part','./parts/patch-04.part','./parts/patch-05.part','./parts/patch-06.part','./parts/patch-07.part','./parts/patch-08.part'];
-  const versioned=file=>`${file}?v=${RELEASE}`;
-  const read=async files=>{
-    const values=[];
-    for(const file of files){
-      const response=await fetch(versioned(file),{cache:'no-store'});
-      if(!response.ok) throw new Error(`Falha ao carregar ${file}`);
-      values.push(await response.text());
-    }
-    return values.join('');
+(async () => {
+  const RELEASE = '3.5.0';
+  const UI_PARTS = [
+    './parts/ui-01.part',
+    './parts/ui-02.part',
+    './parts/ui-03.part',
+    './parts/ui-04.part'
+  ];
+  const SOURCE_PARTS = [
+    './parts/app-01.part',
+    './parts/app-02.part',
+    './parts/app-03.part',
+    './parts/app-04.part',
+    './parts/app-05.part',
+    './parts/app-06.part',
+    './parts/app-07.part',
+    './parts/app-08.part',
+    './parts/app-09.part',
+    './parts/patch-01.part',
+    './parts/patch-02.part',
+    './parts/patch-03.part',
+    './parts/patch-04.part',
+    './parts/patch-05.part',
+    './parts/patch-06.part'
+  ];
+
+  const fetchText = async path => {
+    const response = await fetch(`${path}?v=${RELEASE}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Falha ao carregar ${path}`);
+    return response.text();
   };
-  const [ui,source]=await Promise.all([read(uiParts),read(appParts)]);
-  document.getElementById('appRoot').outerHTML=ui;
-  new Function(`${source}\nwindow.__vettaApp=app;`)();
 
-  const style=document.createElement('style');
-  style.textContent='.modal-backdrop{pointer-events:auto!important}.modal-sheet{position:relative;z-index:2;pointer-events:auto!important}.modal-sheet button,.modal-sheet input,.modal-sheet select{pointer-events:auto!important}';
-  document.head.appendChild(style);
+  const [ui, rawSource] = await Promise.all([
+    Promise.all(UI_PARTS.map(fetchText)).then(parts => parts.join('')),
+    Promise.all(SOURCE_PARTS.map(fetchText)).then(parts => parts.join(''))
+  ]);
 
-  const getApp=()=>window.__vettaApp;
-  const find=(event,selector)=>event.target instanceof Element?event.target.closest(selector):null;
+  const root = document.getElementById('appRoot');
+  if (!root) throw new Error('Raiz do aplicativo não encontrada');
+  root.outerHTML = ui;
 
-  document.addEventListener('click',event=>{
-    const closeButton=find(event,'#closeCostModal');
-    if(closeButton){
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      const modal=document.getElementById('costModal');
-      if(modal) modal.classList.add('hidden');
-      return;
-    }
+  let source = rawSource;
+  const initMarker = '\napp.init();\n';
+  const initCount = source.split(initMarker).length - 1;
+  if (initCount !== 1) {
+    throw new Error(`Inicialização inconsistente: ${initCount} chamadas encontradas`);
+  }
+  source = source.replace(initMarker, '\n');
 
-    const saveButton=find(event,'#saveCostButton');
-    if(saveButton){
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      const currentApp=getApp();
-      if(!currentApp||typeof currentApp.saveCost!=='function'){
-        console.error('Instância do VETTA indisponível ao salvar custo');
-        return;
-      }
-      if(saveButton.dataset.saving==='true') return;
-      saveButton.dataset.saving='true';
-      saveButton.disabled=true;
-      const originalText=saveButton.textContent;
-      saveButton.textContent='Salvando...';
-      try{
-        currentApp.saveCost();
-      }catch(error){
-        console.error('Falha ao salvar custo',error);
-        currentApp.toast?.('Não foi possível salvar. Revise os campos e tente novamente.');
-      }finally{
-        saveButton.dataset.saving='false';
-        saveButton.disabled=false;
-        saveButton.textContent=originalText;
-      }
-      return;
-    }
+  const oldSaveListener = "this.$('saveCostButton').addEventListener('click', () => this.saveCost());";
+  const newSaveListener = "this.$('saveCostButton').addEventListener('click', event => { event.preventDefault(); this.saveCost(); });";
+  if (!source.includes(oldSaveListener)) throw new Error('Listener-base de despesas não encontrado');
+  source = source.replace(oldSaveListener, newSaveListener);
+  source = source.replace('<button id="saveCostButton"', '<button type="button" id="saveCostButton"');
+  source = source.replace('<button id="closeCostModal"', '<button type="button" id="closeCostModal"');
 
-    const modal=document.getElementById('costModal');
-    if(modal&&event.target===modal){
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      modal.classList.add('hidden');
-    }
-  },true);
+  if (!source.includes('const app = {')) throw new Error('Objeto principal do VETTA não encontrado');
+  source = source.replace('const app = {', 'const app = window.__vettaApp = {');
 
-  document.addEventListener('change',event=>{
-    const currentApp=getApp();
-    if(!currentApp) return;
-    if(find(event,'#costTemplate')) currentApp.applyCostTemplate?.(event.target.value);
-    if(find(event,'#costKind')) currentApp.syncCostModal?.();
-  },true);
+  source += `
+const APP_RELEASE = '${RELEASE}';
+const CURRENT_STATE_VERSION = 9;
+const OBSOLETE_STORAGE_KEYS = ['vetta-driver-intelligence-v2', 'vetta-state'];
 
-  document.addEventListener('input',event=>{
-    if(!find(event,'#costName,#costCategory,#costValue,#costDueDay,#costMonth')) return;
-    getApp()?.updateCostImpactPreview?.();
-  },true);
-})().catch(error=>{
-  console.error(error);
-  const root=document.getElementById('appRoot');
-  if(root) root.innerHTML='<main style="max-width:520px;margin:60px auto;padding:24px;font-family:system-ui"><h1>Não foi possível carregar o VETTA</h1><p>Atualize a página com internet para concluir a atualização.</p></main>';
+const cleanCurrentCost = cost => {
+  const technicalName = /custos?\\s+fixos?\\s+(migrados?|iniciais?)/i.test(cost?.name || '');
+  const technicalId = ['fixed-migrated', 'fixed-default'].includes(cost?.id);
+  return {
+    ...cost,
+    name: technicalName || technicalId ? 'Outros custos mensais' : cost.name,
+    legacySource: false
+  };
+};
+
+const normalizeCurrentState = app.normalizeState;
+app.normalizeState = function(value) {
+  const normalized = normalizeCurrentState.call(this, value);
+  normalized.costs = Array.isArray(normalized.costs) ? normalized.costs.map(cleanCurrentCost) : [];
+  normalized.closings = Array.isArray(normalized.closings) ? normalized.closings : [];
+  delete normalized.migrationNotice;
+  normalized.version = CURRENT_STATE_VERSION;
+  normalized.release = APP_RELEASE;
+  return normalized;
+};
+
+const renderCurrentRelease = app.render;
+app.render = function() {
+  renderCurrentRelease.call(this);
+  const label = this.$('appVersionLabel');
+  if (label) label.textContent = \`Versão \${APP_RELEASE}\`;
+};
+
+window.__vettaApp = app;
+app.init();
+OBSOLETE_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+`;
+
+  new Function(source)();
+})().catch(error => {
+  console.error('Falha ao iniciar o VETTA', error);
+  document.body.innerHTML = `
+    <main style="max-width:520px;margin:60px auto;padding:24px;font-family:system-ui">
+      <h1>Não foi possível carregar o VETTA</h1>
+      <p>Atualize a página com internet para concluir a atualização.</p>
+    </main>`;
 });

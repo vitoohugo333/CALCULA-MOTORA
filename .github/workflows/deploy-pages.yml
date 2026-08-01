@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -25,230 +25,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Build concise static application
-        shell: bash
+      - name: Verify application entry
         run: |
-          python <<'PY'
-          from pathlib import Path
-          import re
-          import shutil
-
-          release = '3.5.0'
-          root = Path('.')
-          output = root / '_site'
-          if output.exists():
-              shutil.rmtree(output)
-          output.mkdir()
-
-          ui_files = [root / 'parts' / f'ui-{index:02d}.part' for index in range(1, 5)]
-          app_files = [root / 'parts' / f'app-{index:02d}.part' for index in range(1, 10)]
-          app_files += [root / 'parts' / f'patch-{index:02d}.part' for index in range(1, 7)]
-
-          ui = ''.join(path.read_text(encoding='utf-8') for path in ui_files)
-          source = ''.join(path.read_text(encoding='utf-8') for path in app_files)
-
-          init_marker = '\napp.init();\n'
-          if source.count(init_marker) != 1:
-              raise SystemExit(f'Esperava um app.init() no código-base; encontrei {source.count(init_marker)}')
-          source = source.replace(init_marker, '\n', 1)
-
-          old_listener = "this.$('saveCostButton').addEventListener('click', () => this.saveCost());"
-          new_listener = "this.$('saveCostButton').addEventListener('click', event => { event.preventDefault(); this.saveCost(); });"
-          if source.count(old_listener) != 1:
-              raise SystemExit(f'Esperava um listener-base de despesa; encontrei {source.count(old_listener)}')
-          source = source.replace(old_listener, new_listener, 1)
-
-          if source.count('<button id="saveCostButton"') != 1:
-              raise SystemExit('Botão de salvar despesa não encontrado uma única vez')
-          source = source.replace('<button id="saveCostButton"', '<button type="button" id="saveCostButton"', 1)
-          source = source.replace('<button id="closeCostModal"', '<button type="button" id="closeCostModal"', 1)
-
-          source += f'''\n\nconst APP_RELEASE = '{release}';
-          const CURRENT_STATE_VERSION = 9;
-          const OBSOLETE_STORAGE_KEYS = ['vetta-driver-intelligence-v2', 'vetta-state'];
-
-          const cleanCurrentCost = cost => {{
-            const technicalName = /custos?\\s+fixos?\\s+(migrados?|iniciais?)/i.test(cost?.name || '');
-            const technicalId = ['fixed-migrated', 'fixed-default'].includes(cost?.id);
-            return {{
-              ...cost,
-              name: technicalName || technicalId ? 'Outros custos mensais' : cost.name,
-              legacySource: false
-            }};
-          }};
-
-          const normalizeCurrentState = app.normalizeState;
-          app.normalizeState = function(value) {{
-            const normalized = normalizeCurrentState.call(this, value);
-            normalized.costs = Array.isArray(normalized.costs) ? normalized.costs.map(cleanCurrentCost) : [];
-            normalized.closings = Array.isArray(normalized.closings) ? normalized.closings : [];
-            delete normalized.migrationNotice;
-            normalized.version = CURRENT_STATE_VERSION;
-            normalized.release = APP_RELEASE;
-            return normalized;
-          }};
-
-          const migrateCurrentState = app.migrateLegacy;
-          app.migrateLegacy = function(value) {{
-            return this.normalizeState(migrateCurrentState.call(this, value));
-          }};
-
-          const renderCurrentRelease = app.render;
-          app.render = function() {{
-            renderCurrentRelease.call(this);
-            const label = this.$('appVersionLabel');
-            if (label) label.textContent = `Versão ${{APP_RELEASE}}`;
-          }};
-
-          const initCurrentRelease = app.init;
-          app.init = function() {{
-            initCurrentRelease.call(this);
-            OBSOLETE_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
-            this.state = this.normalizeState(this.state || this.cloneDefaults());
-            this.save();
-            this.render();
-          }};
-
-          window.__vettaApp = app;
-          app.init();
-          '''
-
-          index = (root / 'index.html').read_text(encoding='utf-8')
-          replacement = ui + f'\n<script src="./app.js?v={release}" defer></script>'
-          pattern = re.compile(r'<div id="appRoot">.*?</div><script src="[^"]+" defer></script>', re.S)
-          index, replacements = pattern.subn(replacement, index, count=1)
-          if replacements != 1:
-              raise SystemExit('Não foi possível substituir o carregador antigo no index.html')
-
-          sw = (root / 'sw.js').read_text(encoding='utf-8')
-          sw = re.sub(r'vetta-v\d+\.\d+\.\d+', f'vetta-v{release}', sw)
-          sw = re.sub(r"url\.searchParams\.set\('vetta','[^']+'\)", f"url.searchParams.set('vetta','{release}')", sw)
-
-          (output / 'index.html').write_text(index, encoding='utf-8')
-          (output / 'app.js').write_text(source, encoding='utf-8')
-          (output / 'sw.js').write_text(sw, encoding='utf-8')
-
-          for filename in ('styles.css', 'manifest.webmanifest', 'icon.svg', '.nojekyll'):
-              source_file = root / filename
-              if source_file.exists():
-                  shutil.copy2(source_file, output / filename)
-          PY
-
-      - name: Verify bundle and cost form regression
-        run: |
-          node --check _site/app.js
-          node --check _site/sw.js
+          node --check app.js
+          node --check sw.js
           node <<'NODE'
           const fs = require('node:fs');
           const assert = require('node:assert/strict');
-          const app = fs.readFileSync('_site/app.js', 'utf8');
-          const index = fs.readFileSync('_site/index.html', 'utf8');
-          const sw = fs.readFileSync('_site/sw.js', 'utf8');
+          const app = fs.readFileSync('app.js', 'utf8');
+          const index = fs.readFileSync('index.html', 'utf8');
+          const patch7 = fs.readFileSync('parts/patch-07.part', 'utf8');
+          const patch8 = fs.readFileSync('parts/patch-08.part', 'utf8');
 
-          assert.equal((app.match(/app\.init\(\);/g) || []).length, 1, 'o app deve inicializar exatamente uma vez');
-          assert.equal((app.match(/saveCostButton'\)\.addEventListener\('click'/g) || []).length, 1, 'salvar despesa deve ter exatamente um listener');
-          assert.equal((app.match(/saveCostButton[\s\S]{0,120}onclick/g) || []).length, 0, 'salvar despesa não pode ter onclick concorrente');
-          assert.ok(!app.includes("'./parts/"), 'o navegador não pode carregar partes ou patches');
-          assert.ok(!index.includes('vetta-3.4'), 'o recuperador antigo não pode ser publicado');
-          assert.ok(index.includes('app.js?v=3.5.0'), 'o HTML deve carregar o código principal');
-          assert.ok(app.includes('type="button" id="saveCostButton"'), 'o botão de despesa deve ser explicitamente button');
-          assert.ok(sw.includes("vetta-v3.5.0"), 'o cache deve avançar para 3.5.0');
-          console.log('VETTA monolith checks passed');
+          assert.ok(index.includes('app.js?v=3.5.0'), 'index deve carregar somente app.js 3.5.0');
+          assert.ok(app.includes("const RELEASE = '3.5.0'"), 'app.js deve identificar a versão 3.5.0');
+          assert.ok(!app.includes('patch-07.part'), 'app.js não deve executar o patch de migração legado');
+          assert.ok(!app.includes('patch-08.part'), 'app.js não deve executar handlers legados');
+          assert.ok(!app.includes('stopImmediatePropagation'), 'entrada principal não deve bloquear listeners concorrentes');
+          assert.ok(!patch7.includes('app.render'), 'patch 07 deve permanecer neutro');
+          assert.ok(!patch8.includes('onclick'), 'patch 08 não pode reinstalar handlers');
+          console.log('VETTA 3.5.0 entry verification passed');
           NODE
-
-      - name: Persist concise source on main
-        if: success() && hashFiles('parts/**') != ''
-        shell: bash
-        run: |
-          cp _site/index.html index.html
-          cp _site/app.js app.js
-          cp _site/sw.js sw.js
-          rm -rf parts
-          rm -f vetta-3.4.3.js vetta-3.4.4.js
-          mkdir -p tests
-
-          cat > tests/verify-monolith.mjs <<'TEST'
-          import { readFileSync } from 'node:fs';
-          import assert from 'node:assert/strict';
-
-          const app = readFileSync('app.js', 'utf8');
-          const index = readFileSync('index.html', 'utf8');
-          const sw = readFileSync('sw.js', 'utf8');
-
-          assert.equal((app.match(/app\.init\(\);/g) || []).length, 1, 'o app deve inicializar exatamente uma vez');
-          assert.equal((app.match(/saveCostButton'\)\.addEventListener\('click'/g) || []).length, 1, 'salvar despesa deve ter exatamente um listener');
-          assert.equal((app.match(/saveCostButton[\s\S]{0,120}onclick/g) || []).length, 0, 'salvar despesa não pode ter onclick concorrente');
-          assert.ok(!app.includes("'./parts/"), 'app.js não pode carregar partes ou patches');
-          assert.ok(index.includes('app.js?v=3.5.0'), 'index deve carregar o código principal');
-          assert.ok(app.includes('type="button" id="saveCostButton"'), 'botão de despesa deve ser type button');
-          assert.ok(sw.includes("vetta-v3.5.0"), 'service worker deve usar o cache atual');
-          console.log('VETTA source verification passed');
-          TEST
-
-          cat > .github/workflows/deploy-pages.yml <<'WORKFLOW'
-          name: Deploy VETTA to GitHub Pages
-
-          on:
-            push:
-              branches:
-                - main
-            workflow_dispatch:
-
-          permissions:
-            contents: read
-            pages: write
-            id-token: write
-
-          concurrency:
-            group: pages
-            cancel-in-progress: true
-
-          jobs:
-            deploy:
-              runs-on: ubuntu-latest
-              environment:
-                name: github-pages
-              steps:
-                - name: Checkout
-                  uses: actions/checkout@v6
-
-                - name: Verify application
-                  run: |
-                    node --check app.js
-                    node --check sw.js
-                    node tests/verify-monolith.mjs
-
-                - name: Prepare static site
-                  run: |
-                    rm -rf _site
-                    mkdir _site
-                    cp index.html app.js styles.css manifest.webmanifest icon.svg sw.js .nojekyll _site/
-
-                - name: Configure Pages
-                  uses: actions/configure-pages@v5
-
-                - name: Upload static site
-                  uses: actions/upload-pages-artifact@v4
-                  with:
-                    path: _site
-
-                - name: Deploy to GitHub Pages
-                  id: deployment
-                  uses: actions/deploy-pages@v4
-          WORKFLOW
-
-          node --check app.js
-          node --check sw.js
-          node tests/verify-monolith.mjs
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -u
-          git add tests/verify-monolith.mjs
-          git commit -m "refactor: persiste VETTA 3.5.0 em código principal"
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -256,7 +53,7 @@ jobs:
       - name: Upload static site
         uses: actions/upload-pages-artifact@v4
         with:
-          path: _site
+          path: .
 
       - name: Deploy to GitHub Pages
         id: deployment
