@@ -1,56 +1,66 @@
-# VETTA — Plano de Aplicação, Arquitetura Modular e Evolução de Longo Prazo
+# VETTA — Plano Completo de Implementação e Evolução
 
-> **Status:** fonte de direção do projeto  
-> **Última atualização:** 1 de agosto de 2026  
+> **Status:** documento oficial de direção técnica e de produto  
+> **Versão do plano:** 2.0  
+> **Data:** 1 de agosto de 2026  
 > **Escopo atual:** PWA local-first, sem login obrigatório e sem backend permanente  
-> **Princípio central:** evoluir com o máximo de valor e segurança antes de adicionar complexidade operacional
+> **Objetivo:** construir o máximo de valor, estabilidade e diferenciação antes de adicionar complexidade operacional, regulatória e financeira
 
 ---
 
 ## 1. Finalidade deste documento
 
-Este documento é a fonte principal para orientar a evolução técnica e de produto do VETTA.
+Este documento é a fonte principal para orientar a evolução do VETTA no longo prazo.
 
-Ele existe para evitar que o projeto seja guiado apenas por necessidades do momento, por alterações isoladas ou por decisões difíceis de reencontrar no futuro. Toda implementação relevante deve ser comparada com este plano antes de ser iniciada.
+Ele deve impedir que o projeto seja conduzido apenas por necessidades imediatas, ideias isoladas, alterações sem contexto ou decisões que depois não possam ser reencontradas. Toda implementação relevante deve ser comparada com este plano antes de ser iniciada.
 
-O documento deve ajudar a responder:
+Este plano responde:
 
-- qual problema estamos resolvendo;
+- qual problema o produto resolve;
 - qual etapa tem prioridade;
 - o que pertence ao núcleo do aplicativo;
 - o que deve ser um módulo opcional;
-- como testar uma função sem torná-la permanente;
-- como remover uma experiência que não funcionou;
-- como preservar os dados existentes;
-- como evitar dependência excessiva de GitHub, Netlify ou outro fornecedor;
-- quando realmente será necessário criar login, backend e sincronização;
-- como manter custo, manutenção e risco proporcionais ao estágio do produto.
+- como testar funções que podem não permanecer;
+- como remover experiências sem deixar resíduos;
+- como preservar dados existentes;
+- como preparar pagamentos, webhooks e acesso premium;
+- como separar módulos regulados, como promoções e sorteios;
+- como evitar dependência excessiva de GitHub, Netlify ou qualquer fornecedor;
+- quando login, backend e sincronização realmente passam a ser necessários;
+- como manter custo, manutenção e risco proporcionais ao estágio do projeto.
 
-Este plano deve ser atualizado sempre que uma decisão estrutural importante for tomada. Mudanças de direção precisam ser registradas, e não apenas lembradas informalmente.
+Mudanças estruturais devem atualizar este arquivo e, quando necessário, gerar um registro de decisão arquitetural em `docs/ADR/`.
 
 ---
 
-# Parte I — Direção do produto
+# Parte I — Visão de produto
 
 ## 2. Objetivo geral
 
-Transformar o VETTA em um aplicativo financeiro e operacional completo para motoristas, com:
+Transformar o VETTA em uma plataforma financeira e operacional completa para motoristas, começando por um aplicativo local-first e evoluindo, de forma controlada, para módulos conectados.
 
-- funcionamento local-first;
-- uso offline;
+O VETTA deve oferecer:
+
+- funcionamento offline;
 - instalação no Android e iPhone;
 - linguagem didática;
-- cálculos transparentes;
-- preservação dos dados existentes;
-- atualizações seguras;
-- relatórios e análises úteis;
-- testes automatizados;
+- cálculos financeiros transparentes;
+- metas diárias, semanais e mensais;
+- controle de custos;
+- histórico;
+- manutenção;
+- relatórios;
+- backups;
+- análises e inteligência local;
 - arquitetura modular;
+- experimentação segura;
 - baixo custo operacional;
-- independência razoável de fornecedores;
-- preparação para login e sincronização no futuro, sem antecipar essa complexidade.
+- preservação dos dados;
+- independência de fornecedores;
+- preparação para contas, pagamentos e sincronização futura;
+- isolamento de funções reguladas.
 
-A primeira grande meta é alcançar uma versão local completa, útil e confiável sem obrigar o usuário a criar conta.
+A primeira grande meta é alcançar uma versão local completa, útil e confiável sem exigir conta.
 
 ---
 
@@ -60,7 +70,7 @@ A primeira grande meta é alcançar uma versão local completa, útil e confiáv
 
 Nenhum campo deve depender de conhecimento técnico do usuário.
 
-Palavras como:
+Termos como:
 
 - rendimento;
 - eficiência;
@@ -70,78 +80,99 @@ Palavras como:
 - líquido estimado;
 - depreciação;
 - reserva;
+- margem;
 
-precisam ter explicação, unidade, exemplo e contexto.
+precisam ter unidade, exemplo, explicação e contexto.
 
-Quando uma pessoa pergunta algo que parecia óbvio para quem desenvolveu, isso deve ser tratado como evidência de melhoria da interface, não como erro do usuário.
+Quando uma pessoa pergunta algo que parecia óbvio para quem desenvolveu, isso é evidência de melhoria da interface.
 
-### 3.2 Dados do usuário são um patrimônio
+### 3.2 Dados do usuário são patrimônio
 
-Nenhuma mudança pode sacrificar silenciosamente:
+Nenhuma alteração pode apagar, corromper ou reinterpretar silenciosamente:
 
 - registros diários;
-- custos cadastrados;
+- custos;
 - configurações;
 - combustível;
 - metas;
 - histórico;
-- eventos;
-- backups anteriores compatíveis.
+- manutenção;
+- relatórios;
+- backups antigos compatíveis.
 
-Toda alteração de formato deve possuir migração, validação e forma de recuperação.
+Toda mudança de estrutura deve possuir:
 
-### 3.3 O núcleo deve continuar simples
+- versão;
+- migração;
+- validação;
+- teste;
+- snapshot anterior;
+- recuperação em caso de falha.
 
-O aplicativo não deve depender de um grande conjunto de bibliotecas ou serviços apenas para executar cálculos, armazenar dados localmente e apresentar suas telas principais.
+### 3.3 O núcleo deve permanecer simples
 
-Complexidade deve entrar somente quando trouxer valor comprovado.
+O aplicativo não deve depender de backend, conta, serviço externo ou biblioteca pesada para:
 
-### 3.4 Módulos devem ser substituíveis
+- abrir;
+- calcular metas;
+- registrar o dia;
+- consultar histórico;
+- editar custos;
+- exportar backup.
 
-Uma funcionalidade nova deve poder ser:
+Serviços externos entram apenas quando forem necessários.
+
+### 3.4 Modularidade é requisito de produto
+
+Uma funcionalidade deve poder ser:
 
 - adicionada;
-- ativada para teste;
+- ativada;
 - desativada;
+- testada;
 - substituída;
+- promovida;
 - removida;
 
 sem exigir reescrever o aplicativo inteiro.
 
 ### 3.5 Produção não é laboratório
 
-O fluxo normal deve ser:
+O fluxo padrão será:
 
 ```text
-branch de trabalho
-        ↓
+branch
+  ↓
 Pull Request
-        ↓
+  ↓
 testes automatizados
-        ↓
+  ↓
 Deploy Preview
-        ↓
-teste em aparelho real
-        ↓
+  ↓
+teste em aparelhos reais
+  ↓
+registro de evidência
+  ↓
 aprovação
-        ↓
+  ↓
 merge na main
-        ↓
+  ↓
 deploy de produção
 ```
 
 ### 3.6 Longo prazo sem superengenharia
 
-Pensar no longo prazo não significa construir agora toda a infraestrutura que talvez seja usada futuramente.
+Pensar no futuro não significa construir agora tudo o que talvez seja usado.
 
 Significa:
 
-- criar limites claros;
-- evitar acoplamento desnecessário;
+- definir limites claros;
+- usar contratos simples;
+- evitar acoplamento;
 - registrar decisões;
 - manter dados portáveis;
-- usar interfaces estáveis;
-- não depender de comportamento específico de uma plataforma quando uma solução padrão é suficiente.
+- criar caminhos de migração;
+- evitar dependências irreversíveis.
 
 ### 3.7 Toda função precisa justificar seu custo
 
@@ -149,117 +180,76 @@ Cada recurso deve ser avaliado por:
 
 - valor para o usuário;
 - frequência de uso;
-- risco de erro financeiro;
+- risco de erro;
 - custo de manutenção;
-- complexidade técnica;
 - impacto no desempenho;
-- impacto no armazenamento;
+- impacto nos dados;
+- complexidade operacional;
 - possibilidade de remoção;
-- necessidade real de serviço externo.
+- dependência externa;
+- risco jurídico ou regulatório.
 
 ---
 
-# Parte II — Arquitetura modular
+# Parte II — Arquitetura de longo prazo
 
-## 4. Objetivo da modularização
+## 4. Modelo arquitetural
 
-A modularização deve permitir que o VETTA cresça sem se transformar em um único arquivo ou em uma rede de dependências difíceis de alterar.
+O VETTA será dividido em cinco camadas conceituais:
 
-A arquitetura deve suportar três tipos de elemento:
+1. **Núcleo local**
+2. **Módulos oficiais**
+3. **Módulos opcionais**
+4. **Experimentos**
+5. **Serviços conectados e módulos regulados**
 
-1. **Núcleo obrigatório:** funções sem as quais o produto perde sua identidade.
-2. **Módulos oficiais:** capacidades estáveis que podem ser evoluídas separadamente.
-3. **Experimentos:** funções temporárias, testáveis e removíveis.
-
-O objetivo não é criar um sistema de plugins excessivamente complexo nesta fase. O objetivo é estabelecer contratos simples para que módulos não acessem qualquer parte do aplicativo de forma descontrolada.
-
----
-
-## 5. Divisão conceitual
-
-### 5.1 Núcleo da plataforma
-
-O núcleo é responsável por:
-
-- inicialização;
-- registro dos módulos;
-- navegação;
-- estado global mínimo;
-- acesso padronizado ao armazenamento;
-- eventos internos;
-- tratamento de erros;
-- versionamento da aplicação;
-- feature flags;
-- permissões internas;
-- ciclo de atualização;
-- compatibilidade de dados;
-- renderização do shell principal.
-
-O núcleo não deve conhecer os detalhes de cálculo de cada módulo.
-
-### 5.2 Domínio financeiro
-
-Responsável por regras puras e testáveis:
-
-- metas;
-- custos;
-- combustível;
-- projeções;
-- resultados diários;
-- calendário;
-- manutenção;
-- relatórios;
-- insights.
-
-As funções de domínio não devem depender diretamente do DOM, de componentes visuais, de `localStorage`, do Netlify ou de APIs do navegador.
-
-### 5.3 Infraestrutura
-
-Responsável por:
-
-- armazenamento;
-- migrações;
-- backups;
-- PWA;
-- exportações;
-- importações;
-- telemetria consentida, futuramente;
-- integração com backend, futuramente.
-
-### 5.4 Apresentação
-
-Responsável por:
-
-- telas;
-- componentes;
-- formulários;
-- mensagens;
-- acessibilidade;
-- design tokens;
-- adaptação a aparelhos;
-- onboarding;
-- visualização de gráficos.
-
-A apresentação consome contratos do domínio. Ela não deve duplicar fórmulas financeiras.
-
-### 5.5 Módulos opcionais e experimentais
-
-Responsáveis por funções que podem existir sem alterar o núcleo:
-
-- radar de eventos;
-- manutenção avançada;
-- comparação de cenários;
-- gamificação;
-- ranking;
-- insights experimentais;
-- relatório compartilhável;
-- simuladores;
-- novos painéis;
-- integrações externas.
+```text
+VETTA
+├── Núcleo local
+│   ├── inicialização
+│   ├── registro de módulos
+│   ├── armazenamento
+│   ├── eventos
+│   ├── navegação
+│   ├── versionamento
+│   └── PWA
+│
+├── Módulos oficiais
+│   ├── metas
+│   ├── custos
+│   ├── combustível
+│   ├── registros diários
+│   ├── histórico
+│   ├── onboarding
+│   └── relatórios
+│
+├── Módulos opcionais
+│   ├── manutenção
+│   ├── depreciação
+│   ├── insights
+│   ├── radar
+│   └── comparadores
+│
+├── Experimentos
+│   ├── dashboards alternativos
+│   ├── gamificação
+│   ├── novos gráficos
+│   └── novas recomendações
+│
+└── Camada conectada
+    ├── identidade
+    ├── sincronização
+    ├── billing
+    ├── entitlements
+    ├── membership
+    ├── rewards
+    ├── webhooks
+    └── promotions
+```
 
 ---
 
-## 6. Estrutura de diretórios desejada
+## 5. Estrutura de diretórios desejada
 
 ```text
 src/
@@ -269,62 +259,69 @@ src/
     router.js
     events.js
     feature-flags.js
-    error-boundary.js
+    permissions.js
+    diagnostics.js
     version.js
 
   core/
     contracts/
-    types/
     validation/
     formatting/
+    errors/
     time/
+    ids/
+    security/
 
   modules/
     dashboard/
-      index.js
       manifest.js
+      index.js
       domain/
       application/
+      infrastructure/
       views/
       tests/
 
+    onboarding/
     daily-records/
-      index.js
-      manifest.js
-      domain/
-      application/
-      views/
-      tests/
-
     goals/
     costs/
     fuel/
     history/
-    onboarding/
     reports/
     maintenance/
     insights/
+    rewards/
     experiments/
 
   storage/
     database.js
     repositories/
     migrations/
+    snapshots/
     backup/
     validation/
+
+  integrations/
+    payments/
+    notifications/
+    analytics/
+    sync/
 
   pwa/
     install.js
     updates.js
     offline.js
     cache-policy.js
+    recovery.js
 
   ui/
     components/
     layouts/
-    icons/
+    forms/
     feedback/
     accessibility/
+    icons/
 
   styles/
     tokens.css
@@ -332,16 +329,27 @@ src/
     app.css
     components/
 
+server/
+  webhooks/
+  billing/
+  entitlements/
+  membership/
+  promotions/
+  audit/
+  repositories/
+
 public/
   manifest.webmanifest
   sw.js
   icons/
 
 tests/
+  unit/
   contracts/
   migrations/
   integration/
   e2e/
+  security/
   fixtures/
 
 docs/
@@ -349,410 +357,218 @@ docs/
   ADR/
   MODULES.md
   DATA-MODEL.md
+  SECURITY.md
+  RELEASES.md
 ```
 
-Esta é uma direção arquitetural. A migração deve ser gradual e não deve forçar uma grande reescrita sem validação.
+Essa estrutura é uma direção. A migração deve ser gradual.
 
 ---
 
-## 7. Contrato mínimo de um módulo
+## 6. Contrato mínimo de módulo
 
-Todo módulo deve possuir um manifesto simples.
-
-Exemplo conceitual:
+Cada módulo terá um manifesto.
 
 ```js
 export const moduleManifest = {
   id: 'maintenance',
   version: '1.0.0',
+  category: 'optional',
   status: 'stable',
-  defaultEnabled: true,
-  navigation: {
-    label: 'Manutenção',
-    order: 50,
-  },
+  defaultEnabled: false,
   dataVersion: 1,
   dependencies: ['daily-records'],
+  capabilities: ['read:records', 'write:maintenance'],
+  navigation: {
+    label: 'Manutenção',
+    order: 60,
+  },
 };
 ```
 
 O manifesto deve declarar:
 
-- identificador estável;
+- ID estável;
 - versão;
-- estado do módulo;
+- categoria;
+- estado;
 - dependências;
-- se está ativo por padrão;
-- rotas ou entradas de navegação;
+- permissões;
 - versão dos dados;
-- recursos necessários;
-- categoria: núcleo, oficial, opcional ou experimental.
+- rotas;
+- entrada de navegação;
+- ativação padrão;
+- requisitos de backend;
+- requisitos jurídicos, quando aplicável.
 
-Um módulo não deve depender de caminhos internos de outro módulo. Deve consumir apenas interfaces públicas.
+### Estados de módulo
 
----
-
-## 8. Estados possíveis de um módulo
-
-Cada módulo pode estar em um destes estados:
-
-### `core`
-
-Obrigatório para a identidade do produto. Não pode ser desativado pelo usuário.
-
-### `stable`
-
-Oficial, testado e habilitado normalmente.
-
-### `optional`
-
-Oficial, mas pode ser ativado ou desativado sem quebrar o núcleo.
-
-### `experimental`
-
-Em validação. Pode mudar, desaparecer ou ter dados descartáveis.
-
-### `deprecated`
-
-Ainda compatível por um período, mas será removido.
-
-### `removed`
-
-Código e dados já não fazem parte do produto ativo. Migrações devem saber lidar com resíduos antigos.
+- `core`: obrigatório;
+- `stable`: oficial e ativo;
+- `optional`: oficial e removível;
+- `experimental`: em teste;
+- `regulated`: exige validações adicionais;
+- `deprecated`: em retirada;
+- `removed`: não executa mais.
 
 ---
 
-## 9. Registro de módulos
+## 7. Registro de módulos
 
-O aplicativo deve possuir um registro central.
-
-Responsabilidades do registro:
+O núcleo terá um registro responsável por:
 
 - validar manifestos;
 - impedir IDs duplicados;
 - verificar dependências;
 - ordenar módulos;
 - ativar somente módulos compatíveis;
-- expor rotas e ações;
-- isolar falhas de inicialização;
-- registrar versão;
-- informar quais módulos estão ativos no diagnóstico.
+- registrar rotas;
+- registrar comandos;
+- isolar falhas;
+- expor diagnóstico;
+- controlar versão;
+- impedir módulo regulado sem liberação.
 
-O registro não deve executar regras financeiras. Ele apenas organiza o ciclo de vida.
+O registro não executará regras financeiras.
 
 ---
 
-## 10. Comunicação entre módulos
+## 8. Comunicação entre módulos
 
-Módulos devem se comunicar por duas formas principais.
-
-### 10.1 Serviços públicos
+### 8.1 Serviços públicos
 
 Exemplos:
 
-- `recordsRepository.list()`;
-- `goalsService.calculate()`;
-- `costsService.monthlyTotal()`;
-- `reportsService.buildMonthlyReport()`.
+```js
+recordsRepository.list()
+goalsService.calculate()
+costsService.monthlyTotal()
+reportsService.buildMonthlyReport()
+entitlementsService.can('reports.advanced')
+```
 
-Esses serviços devem ter contratos testados.
+Módulos não devem importar arquivos internos de outros módulos.
 
-### 10.2 Eventos internos
+### 8.2 Eventos internos
 
 Exemplos:
 
-- `record:created`;
-- `record:updated`;
-- `cost:changed`;
-- `goal:recalculated`;
-- `backup:imported`;
-- `app:updated`.
-
-Eventos evitam que um módulo chame diretamente detalhes internos de outro.
+```text
+record.created
+record.updated
+cost.changed
+goal.recalculated
+backup.imported
+app.updated
+payment.confirmed
+entitlement.granted
+membership.expired
+```
 
 Regras:
 
-- eventos devem ter nomes estáveis;
-- payloads devem ser validados;
-- eventos não podem ser a única fonte de verdade;
-- falha de um observador não pode impedir o evento principal;
-- eventos críticos precisam de testes de integração.
+- nomes estáveis;
+- payload validado;
+- versão quando necessário;
+- falha de um observador não interrompe o evento principal;
+- eventos críticos possuem testes de integração;
+- eventos não substituem a fonte oficial de dados.
 
 ---
 
-## 11. Feature flags
+## 9. Feature flags
 
-Feature flags permitirão testar recursos sem torná-los permanentes.
-
-Exemplos:
+Feature flags serão usadas para testar recursos.
 
 ```js
 export const featureFlags = {
   newOnboarding: false,
   maintenanceModule: false,
   experimentalInsights: false,
+  connectedAccount: false,
 };
 ```
 
-Nesta fase, flags podem ser locais e versionadas no código.
+Toda flag deve ter:
 
-Futuramente, se houver backend, algumas flags poderão ser remotas. O aplicativo não deve depender de flags remotas para abrir ou preservar dados.
+- propósito;
+- responsável;
+- data de revisão;
+- condição de promoção;
+- condição de remoção;
+- estratégia de dados.
 
-### Regras para feature flags
-
-- toda flag deve ter responsável e objetivo;
-- toda flag deve ter data ou condição de revisão;
-- flags não podem permanecer indefinidamente;
-- quando a decisão for tomada, a flag e o caminho descartado devem ser removidos;
-- dados criados por um experimento devem possuir estratégia de migração ou descarte;
-- recursos financeiros experimentais não devem alterar registros oficiais sem confirmação explícita.
+Flags não podem permanecer indefinidamente.
 
 ---
 
-## 12. Laboratório de experimentos
+## 10. Laboratório de experimentos
 
-Funções novas que ainda não provaram valor devem entrar em um espaço controlado.
+Cada experiência deve possuir:
 
-Exemplos:
+1. hipótese;
+2. público;
+3. problema;
+4. critério de sucesso;
+5. riscos;
+6. duração;
+7. implementação isolada;
+8. Deploy Preview;
+9. teste real;
+10. decisão final.
 
-- nova forma de apresentar meta;
-- painel alternativo;
-- novo modelo de insight;
-- gamificação;
-- previsão experimental;
-- comparação de horários;
-- recomendação de jornada;
-- novo gráfico.
+Resultados possíveis:
 
-### Processo de experimento
+- promovido;
+- revisado;
+- descartado.
 
-1. Registrar hipótese.
-2. Definir qual problema será resolvido.
-3. Definir como saber se funcionou.
-4. Construir como módulo experimental ou flag.
-5. Usar dados isolados quando necessário.
-6. Criar testes de segurança e regressão.
-7. Gerar Deploy Preview.
-8. Testar com pessoas reais.
-9. Registrar resultados.
-10. Promover, modificar ou remover.
+Ao descartar:
 
-### Resultados possíveis
+- remover código;
+- remover flag;
+- remover estilos;
+- remover rotas;
+- remover dados temporários;
+- atualizar documentação.
 
-- **Promovido:** vira módulo estável.
-- **Revisado:** continua experimental com mudança clara.
-- **Descartado:** código, flag e dados temporários são removidos.
-
-Um experimento descartado não deve deixar código morto ou caminhos permanentes na aplicação.
+Experimentos financeiros nunca alteram registros oficiais sem confirmação explícita.
 
 ---
 
-## 13. Isolamento de dados experimentais
+## 11. Isolamento de dados
 
-Experimentos não devem escrever diretamente em estruturas oficiais sem necessidade.
-
-Opções:
-
-- namespace separado no armazenamento;
-- campo de versão próprio;
-- dados derivados, recalculáveis;
-- armazenamento em memória;
-- snapshot antes de alteração;
-- confirmação explícita antes de incorporar ao estado principal.
-
-Exemplo de namespaces:
+Namespaces recomendados:
 
 ```text
-vetta/core/records
 vetta/core/settings
+vetta/core/records
 vetta/modules/maintenance
+vetta/modules/reports
 vetta/experiments/new-dashboard
+vetta/connected/account-cache
 ```
 
-A implementação real pode usar IndexedDB com stores separadas, mas o princípio deve existir desde antes da migração.
+Regras:
+
+- dados experimentais separados;
+- módulos removidos não podem quebrar o carregamento;
+- dados derivados devem ser recalculáveis;
+- cada módulo possui versão de schema;
+- importações devem validar o namespace;
+- recursos conectados devem manter cache local não autoritativo.
 
 ---
 
-## 14. Critérios para um módulo entrar no produto
+# Parte III — Experiência didática
 
-Um módulo só deve virar estável quando:
+## 12. Revisão de linguagem
 
-- resolve um problema claro;
-- possui contrato definido;
-- não duplica regras existentes;
-- possui testes unitários;
-- possui teste de integração quando necessário;
-- possui estados vazios e de erro;
-- não quebra funcionamento offline sem justificativa;
-- possui migração de dados;
-- possui documentação mínima;
-- foi testado em aparelho real;
-- foi compreendido por usuários de teste;
-- tem plano de manutenção;
-- pode ser removido ou desativado de forma previsível.
+### Campo de combustível
 
----
+Evitar somente “Rendimento”.
 
-## 15. Critérios para remover um módulo
-
-Um módulo pode ser removido quando:
-
-- não entrega valor suficiente;
-- quase não é utilizado;
-- aumenta confusão;
-- duplica outro recurso;
-- cria risco financeiro;
-- exige manutenção desproporcional;
-- depende de serviço caro sem retorno;
-- falha em testes com usuários.
-
-A remoção deve considerar:
-
-- exportação de dados;
-- migração para recurso substituto;
-- limpeza segura;
-- compatibilidade com backups antigos;
-- mensagem ao usuário quando necessário;
-- remoção de rotas, flags, estilos, testes e eventos.
-
----
-
-## 16. Núcleo mínimo recomendado
-
-Os seguintes módulos devem formar o núcleo funcional inicial:
-
-- shell e navegação;
-- onboarding;
-- configurações operacionais;
-- combustível;
-- custos;
-- metas;
-- registro diário;
-- histórico;
-- cálculo financeiro;
-- backup;
-- PWA e atualização;
-- diagnóstico e versão.
-
-Os seguintes podem começar como módulos opcionais:
-
-- manutenção;
-- relatórios avançados;
-- insights;
-- ranking;
-- comparação de cenários;
-- radar e eventos;
-- compartilhamento visual;
-- gamificação.
-
----
-
-# Parte III — Portabilidade e independência tecnológica
-
-## 17. Não depender do GitHub como parte do produto
-
-GitHub deve ser ferramenta de desenvolvimento, não dependência de execução.
-
-O aplicativo publicado não deve precisar acessar GitHub para:
-
-- iniciar;
-- validar versão;
-- calcular;
-- salvar dados;
-- funcionar offline;
-- carregar módulos oficiais.
-
-O repositório deve poder ser migrado para outro provedor Git sem alterar o produto.
-
-### Medidas
-
-- usar Git padrão;
-- evitar workflows que só funcionem com lógica exclusiva desnecessária;
-- manter scripts executáveis localmente;
-- documentar variáveis e comandos;
-- não armazenar decisões somente em issues;
-- manter documentação crítica no próprio repositório.
-
----
-
-## 18. Não depender do Netlify como parte do domínio
-
-Netlify deve hospedar e entregar o site, mas não definir as regras do produto.
-
-O aplicativo deve poder ser hospedado futuramente em:
-
-- Cloudflare Pages;
-- Vercel;
-- GitHub Pages, quando compatível;
-- servidor estático próprio;
-- armazenamento de objetos com CDN;
-- outro provedor.
-
-### Regras
-
-- build deve gerar uma pasta estática padrão, preferencialmente `dist`;
-- redirects e headers devem ter documentação equivalente;
-- nenhuma fórmula deve depender de Function ou Edge Function;
-- variáveis específicas da hospedagem devem ficar em adaptadores;
-- o service worker deve funcionar independentemente do provedor;
-- o projeto deve poder rodar com `npm install`, `npm run build` e um servidor estático.
-
----
-
-## 19. Padrões tecnológicos
-
-Preferências atuais:
-
-- JavaScript moderno com módulos ES;
-- Vite para desenvolvimento e build;
-- HTML e CSS acessíveis;
-- Node.js LTS ou versão estável definida no projeto;
-- testes nativos do Node quando suficientes;
-- Playwright para fluxos reais;
-- IndexedDB para armazenamento estruturado;
-- JSON, CSV e PDF para portabilidade;
-- APIs Web padrão antes de dependências externas.
-
-Bibliotecas devem ser adotadas quando reduzirem risco ou esforço de forma mensurável.
-
----
-
-## 20. Decisões arquiteturais registradas
-
-Decisões importantes devem virar ADRs em `docs/ADR/`.
-
-Formato sugerido:
-
-```text
-ADR-0001-usar-vite.md
-ADR-0002-local-first.md
-ADR-0003-registro-de-modulos.md
-ADR-0004-indexeddb.md
-ADR-0005-backend-futuro.md
-```
-
-Cada ADR deve registrar:
-
-- contexto;
-- decisão;
-- alternativas consideradas;
-- consequências;
-- riscos;
-- condição para revisar a decisão.
-
----
-
-# Parte IV — Clareza e experiência do usuário
-
-## 21. Revisão completa da linguagem
-
-### Caso “rendimento”
-
-“Rendimento” não é suficientemente claro para todos.
-
-Também não devemos chamar diretamente de “consumo por km” quando o valor informado é `km/L` ou `km/m³`, pois são medidas inversas.
-
-### Campo recomendado para combustível líquido
+Usar:
 
 **Quantos quilômetros o veículo faz com 1 litro?**
 
@@ -762,13 +578,7 @@ Unidade:
 km/L
 ```
 
-Texto auxiliar:
-
-```text
-Exemplo: se o carro percorre aproximadamente 10 km usando 1 litro, informe 10.
-```
-
-### Campo recomendado para GNV
+Para GNV:
 
 **Quantos quilômetros o veículo faz com 1 m³ de GNV?**
 
@@ -778,77 +588,62 @@ Unidade:
 km/m³
 ```
 
-### Resultado calculado
+Ajuda:
+
+> Exemplo: se o carro percorre aproximadamente 10 km usando 1 litro, informe 10.
+
+Resultado calculado:
 
 **Custo de combustível por quilômetro**
 
-```text
-R$ 0,48 por km
-```
+> É quanto você gasta de combustível para percorrer 1 km.
 
-Texto auxiliar:
-
-```text
-É quanto você gasta de combustível para percorrer 1 km.
-```
-
-A interface deve deixar clara a diferença:
-
-```text
-Entrada: quantos quilômetros o veículo faz por litro ou m³
-Resultado: quanto custa percorrer cada quilômetro
-```
-
----
-
-## 22. Dicionário de linguagem sugerido
+### Dicionário de produto
 
 | Termo técnico | Texto recomendado |
 |---|---|
-| Rendimento | Quantos km faz com 1 litro ou 1 m³ |
+| Rendimento | Quantos km faz com 1 litro ou m³ |
 | Eficiência | Consumo do veículo |
 | Receita por km | Quanto você recebe por km rodado |
 | Custo por km | Quanto cada km custa |
-| Meta líquida | Quanto você quer que sobre no mês |
+| Meta líquida | Quanto você quer que sobre |
 | Faturamento bruto | Total recebido antes dos custos |
-| Líquido | Valor que sobra depois dos custos |
+| Líquido | Valor que sobra após os custos |
 | Custos fixos | Contas que existem mesmo sem trabalhar |
-| Custos variáveis | Gastos que aumentam conforme você roda |
-| Projeção | Estimativa para o fim do período |
+| Custos variáveis | Gastos que aumentam quando você roda |
+| Projeção | Estimativa para o final do período |
 | Reserva | Dinheiro separado para gastos futuros |
-| Depreciação | Perda estimada de valor do veículo com uso e tempo |
+| Depreciação | Perda estimada de valor do veículo |
 
-Cada campo importante deve ter:
+Todo campo importante deve ter:
 
-- título claro;
-- unidade visível;
+- label;
+- unidade;
 - exemplo;
-- explicação curta;
-- validação humana;
-- indicação quando um número é estimado.
+- texto auxiliar;
+- validação;
+- valor sugerido identificado como estimativa.
 
 ---
 
-## 23. Onboarding guiado
+## 13. Onboarding
 
 ### Etapa 1 — apresentação
 
 Explicar:
 
-- para que serve o VETTA;
+- o que o VETTA faz;
 - que os dados ficam no aparelho;
-- que não é necessário criar conta;
-- que tudo poderá ser alterado depois.
+- que conta não é obrigatória;
+- que tudo pode ser alterado depois.
 
-### Etapa 2 — rotina de trabalho
+### Etapa 2 — rotina
 
 Perguntar:
 
-- dias da semana;
-- folgas extras;
-- média opcional de horas por dia.
-
-Mostrar imediatamente quantos dias de trabalho serão considerados.
+- dias de trabalho;
+- folgas;
+- horas médias opcionais.
 
 ### Etapa 3 — combustível
 
@@ -856,141 +651,144 @@ Perguntar:
 
 - tipo;
 - preço;
-- quantos quilômetros faz por litro ou m³.
+- km por litro ou m³.
 
-Mostrar o custo calculado por quilômetro.
+Mostrar imediatamente o custo por km.
 
-### Etapa 4 — receita operacional
+### Etapa 4 — receita
 
 Perguntar:
 
 **Em média, quanto você recebe por quilômetro rodado?**
 
-Explicar com exemplo:
+Explicar:
 
 ```text
-R$ 240 de faturamento ÷ 120 km = R$ 2,00 por km.
+R$ 240 ÷ 120 km = R$ 2,00 por km
 ```
 
 Permitir “Ainda não sei”.
 
 ### Etapa 5 — custos
 
-Oferecer categorias editáveis:
+Sugestões:
 
-- financiamento ou aluguel;
+- financiamento;
+- aluguel;
 - seguro;
-- telefone e internet;
+- internet;
 - lavagem;
 - manutenção;
 - pneus;
 - documentação;
 - alimentação;
-- reservas;
+- reserva;
 - outros.
 
 ### Etapa 6 — objetivo
 
 Perguntar:
 
-**Quanto você quer que sobre no mês depois de pagar os custos?**
+**Quanto você quer que sobre no mês depois dos custos?**
 
-### Etapa 7 — primeira meta
+### Etapa 7 — resultado
 
 Mostrar:
 
-- faturamento mensal necessário;
+- faturamento mensal;
 - faturamento diário;
-- quilometragem estimada;
+- km estimados;
 - custo de combustível;
 - líquido esperado;
-- dias considerados;
-- explicação “Como chegamos a esse número?”.
+- dias usados no cálculo.
 
 ### Etapa 8 — primeira ação
 
-Levar para “Registrar meu primeiro dia”.
+Levar para:
 
-### Requisitos
+**Registrar meu primeiro dia**
+
+Requisitos:
 
 - voltar;
 - pular opcionais;
 - salvar progresso;
 - refazer sem apagar registros;
-- não bloquear o aplicativo;
-- funcionar offline.
+- não bloquear uso.
 
 ---
 
-# Parte V — Funcionalidades do produto local
+# Parte IV — Funcionalidades locais
 
-## 24. Dashboard didático
+## 14. Dashboard
 
-Deve apresentar em primeiro lugar:
+Mostrar primeiro:
 
 - meta de faturamento do dia;
 - líquido esperado;
-- situação do mês;
+- progresso mensal;
 - quanto falta;
 - dias restantes;
-- média necessária daqui para frente.
+- média necessária;
+- custos principais.
 
-Todo cartão deve responder:
+Cada cartão deve responder:
 
 - o que é;
 - como foi calculado;
-- qual período utiliza;
-- se é estimativa ou valor registrado.
+- qual período usa.
 
-Estados vazios devem orientar uma ação, em vez de apenas mostrar zero.
+Estados vazios devem orientar.
 
 ---
 
-## 25. Fechamento diário
+## 15. Fechamento diário
 
-### Dados essenciais
+### Essenciais
 
 - data;
 - faturamento;
 - quilômetros.
 
-### Dados opcionais
+### Opcionais
 
-- horas online;
-- combustível abastecido;
-- quantidade;
+- horas;
+- combustível;
+- quantidade abastecida;
 - preço;
 - pedágio;
 - estacionamento;
 - alimentação;
 - lavagem;
 - outros gastos;
-- observações.
+- observação.
 
-### Resultados automáticos
+### Cálculos
 
 - faturamento por km;
 - faturamento por hora;
-- custo de combustível;
-- custos variáveis;
-- parcela dos custos fixos;
-- líquido estimado;
-- diferença para a meta;
-- comparação com a própria média.
+- combustível;
+- custo variável;
+- custo fixo diário;
+- líquido;
+- diferença para meta;
+- comparação com média.
+
+Feedback deve orientar, não julgar.
 
 ---
 
-## 26. Histórico e gráficos
+## 16. Histórico e gráficos
 
 Filtros:
 
 - semana;
 - mês;
-- período personalizado;
+- período;
 - dia da semana;
 - combustível.
 
-Gráficos possíveis:
+Gráficos:
 
 - faturamento;
 - líquido;
@@ -1000,38 +798,29 @@ Gráficos possíveis:
 - horas;
 - líquido por hora;
 - progresso;
-- distribuição de custos.
+- custos.
 
-Os números principais devem existir fora do gráfico, e cores não podem ser o único indicador.
+Comparações:
+
+- semana anterior;
+- mês anterior;
+- melhor dia;
+- pior dia;
+- média recente;
+- média histórica.
 
 ---
 
-## 27. Custos e manutenção
+## 17. Custos e manutenção
 
-### Custos fixos
+Custos:
 
-- financiamento;
-- aluguel;
-- seguro;
-- documentação;
-- internet;
-- assinaturas;
-- estacionamento mensal.
+- mensais;
+- semanais;
+- pontuais;
+- por quilômetro.
 
-### Custos variáveis
-
-- combustível;
-- manutenção por km;
-- pneus por km;
-- lavagem;
-- pedágio;
-- alimentação;
-- comissão;
-- outros.
-
-### Manutenção preventiva
-
-Itens por data, quilometragem ou ambos:
+Manutenção:
 
 - óleo;
 - filtros;
@@ -1040,770 +829,902 @@ Itens por data, quilometragem ou ambos:
 - alinhamento;
 - correias;
 - revisão;
-- outros.
+- personalizados.
 
-O módulo de manutenção deve começar como opcional e só virar parte estável após validação.
+Controle por:
+
+- quilometragem;
+- data;
+- ambos.
 
 ---
 
-## 28. Projeções e inteligência local
+## 18. Inteligência local
 
 Insights possíveis:
 
-- melhor dia da semana;
+- melhor dia;
 - pior dia;
-- tendência de custo por km;
-- aumento de consumo;
+- tendência de consumo;
 - queda de receita por km;
-- distância necessária para a meta;
-- média necessária nos dias restantes;
-- impacto de uma folga;
-- impacto de um novo custo;
-- impacto da troca de combustível.
+- aumento de custo;
+- risco de meta;
+- impacto de folga;
+- impacto de combustível;
+- impacto de custo novo.
 
 Regras:
 
-- explicar a base;
-- exigir dados mínimos;
-- não afirmar causalidade indevida;
-- usar linguagem de estimativa;
-- não recomendar jornadas perigosas;
-- permitir dispensar o insight.
-
-O módulo de insights deve ser desacoplado. A aplicação deve continuar plenamente funcional sem ele.
+- base explicada;
+- quantidade mínima de dados;
+- não afirmar causalidade;
+- evitar incentivo a jornadas perigosas;
+- permitir dispensar.
 
 ---
 
-## 29. Relatórios e compartilhamento
+## 19. Relatórios e exportações
 
 Relatório mensal:
 
 - faturamento;
 - custos;
 - líquido;
-- quilômetros;
+- km;
 - horas;
-- média diária;
-- receita por km;
-- custo por km;
-- líquido por km;
-- líquido por hora;
-- progresso da meta;
-- comparação com período anterior.
+- médias;
+- progresso;
+- principais custos;
+- comparação.
 
-Exportações:
+Formatos:
 
-- JSON completo;
-- CSV;
 - PDF;
+- CSV;
+- JSON;
 - imagem resumida.
 
-Antes de compartilhar, permitir ocultar informações sensíveis.
+Privacidade:
+
+- ocultar valores;
+- ocultar observações;
+- ocultar identificação;
+- selecionar campos.
 
 ---
 
-# Parte VI — Dados e armazenamento
+# Parte V — Dados e PWA
 
-## 30. Evolução para IndexedDB
+## 20. Armazenamento
 
-A migração de `localStorage` para IndexedDB deve ser gradual.
-
-Benefícios:
-
-- maior capacidade;
-- stores separadas;
-- consultas estruturadas;
-- transações;
-- melhor suporte a módulos;
-- snapshots;
-- recuperação mais segura.
-
-Stores conceituais:
+Evolução:
 
 ```text
-app_meta
-settings
-records
-costs
-maintenance
-modules
-feature_flags
-experiments
-snapshots
+localStorage
+    ↓
+camada de repositório
+    ↓
+IndexedDB
 ```
 
----
+Proteções:
 
-## 31. Camada de repositórios
-
-Módulos não devem acessar IndexedDB diretamente.
-
-Devem consumir repositórios como:
-
-```js
-recordsRepository.create(record)
-recordsRepository.listByPeriod(period)
-costsRepository.save(cost)
-settingsRepository.get()
-```
-
-Isso permitirá:
-
-- trocar implementação de armazenamento;
-- criar testes em memória;
-- futuramente sincronizar com servidor;
-- exportar dados;
-- aplicar validação central.
+- snapshot;
+- validação;
+- escrita atômica quando possível;
+- migração versionada;
+- recuperação;
+- backup automático local;
+- importação pré-visualizada.
 
 ---
 
-## 32. Migrações
-
-Toda mudança de esquema deve ter:
-
-- número de versão;
-- transformação determinística;
-- validação antes e depois;
-- snapshot anterior;
-- teste com fixtures antigas;
-- recuperação em caso de falha;
-- compatibilidade de importação.
-
-Migrações nunca devem depender da interface estar aberta em determinada tela.
-
----
-
-## 33. Backup
-
-Oferecer:
-
-- exportação completa;
-- data e versão;
-- validação de integridade;
-- visualização antes de importar;
-- possibilidade de substituição ou mesclagem quando segura;
-- aviso contra operação destrutiva;
-- compatibilidade com versões anteriores.
-
-O formato de backup deve ser documentado e independente de provedor.
-
----
-
-# Parte VII — PWA e funcionamento offline
-
-## 34. Instalação
+## 21. PWA
 
 ### Android
 
-- usar `beforeinstallprompt` quando disponível;
-- exibir botão apenas quando fizer sentido;
-- detectar app instalado;
-- fornecer instrução alternativa.
+- `beforeinstallprompt`;
+- botão contextual;
+- detectar instalado;
+- instrução alternativa.
 
 ### iPhone
 
 - detectar iOS;
-- orientar pelo Safari;
-- explicar Compartilhar → Adicionar à Tela de Início;
-- não mostrar botão que pareça quebrado;
-- respeitar áreas seguras.
+- instruções para Safari;
+- Compartilhar;
+- Adicionar à Tela de Início;
+- não mostrar botão quebrado.
 
----
+### Atualizações
 
-## 35. Atualizações
-
-- verificar nova versão;
-- informar atualização;
+- verificar versão;
+- avisar;
+- atualizar com segurança;
+- evitar loop;
 - preservar dados;
-- evitar loop de recarga;
-- exibir versão instalada;
-- permitir diagnóstico;
-- manter política clara de cache.
+- diagnóstico de cache.
 
-O service worker deve ser infraestrutura e não deve conter regras de negócio.
+### Offline
 
----
-
-## 36. Offline
-
-O usuário deve poder:
-
-- abrir o app;
-- registrar dias;
-- consultar histórico;
-- alterar configurações;
-- calcular metas;
-- exportar backup;
-- utilizar módulos locais compatíveis.
-
-Módulos que dependam de rede devem declarar essa dependência e possuir estado offline adequado.
+- abrir;
+- registrar;
+- consultar;
+- configurar;
+- exportar.
 
 ---
 
-# Parte VIII — Acessibilidade e qualidade
+# Parte VI — Camada conectada
 
-## 37. Acessibilidade
+## 22. Quando adicionar backend
 
-- contraste adequado;
-- alvos de toque grandes;
-- labels reais;
-- foco visível;
-- suporte a teclado;
-- mensagens associadas aos campos;
-- leitores de tela;
-- redução de movimento;
-- fontes ajustáveis;
-- texto fora dos gráficos;
-- unidades sempre visíveis.
+Backend só entra quando houver necessidade comprovada de:
 
----
-
-## 38. Design system mínimo
-
-Criar tokens para:
-
-- cores;
-- espaços;
-- tipografia;
-- raios;
-- sombras;
-- estados;
-- tamanhos de toque;
-- z-index;
-- animações.
-
-Componentes comuns:
-
-- botão;
-- campo;
-- seletor;
-- card;
-- modal;
-- toast;
-- tooltip didático;
-- indicador;
-- estado vazio;
-- confirmação;
-- gráfico acessível.
-
-Módulos devem reutilizar esses componentes em vez de criar versões incompatíveis.
+- sincronizar aparelhos;
+- recuperar conta;
+- vender acesso;
+- processar pagamentos;
+- receber webhooks;
+- enviar notificações;
+- administrar membros;
+- compartilhar dados privados;
+- operar promoções autorizadas.
 
 ---
 
-# Parte IX — Testes e qualidade de engenharia
+## 23. Identidade
 
-## 39. Pirâmide de testes
+A identidade futura deve ser mínima no início.
 
-### Testes unitários
+Opções:
 
-Para:
+- e-mail com link;
+- código de ativação;
+- telefone;
+- login tradicional.
 
-- fórmulas;
-- calendário;
-- normalização;
-- validação;
-- migrações;
-- contratos dos módulos.
+O núcleo local não deve depender da autenticação para abrir.
 
-### Testes de integração
+Dados conectados devem ser complementares.
 
-Para:
+---
 
-- módulos e repositórios;
+## 24. Billing
+
+O módulo `billing` cuidará de:
+
+- planos;
+- preços;
+- cobranças;
+- pagamentos;
+- reembolsos;
+- assinaturas;
+- conciliação.
+
+Ele não libera telas diretamente.
+
+---
+
+## 25. Entitlements
+
+O módulo `entitlements` decide o que o usuário pode usar.
+
+Exemplos:
+
+```text
+reports.basic
+reports.advanced
+maintenance
+sync
+multiple-vehicles
+premium-insights
+```
+
+Fluxo:
+
+```text
+pagamento confirmado
+       ↓
+evento interno
+       ↓
+entitlement concedido
+       ↓
+aplicativo atualiza capacidades
+```
+
+---
+
+## 26. Membership
+
+Responsável por:
+
+- situação do membro;
+- data de entrada;
+- renovação;
+- cancelamento;
+- benefícios;
+- categoria;
+- histórico.
+
+---
+
+## 27. Webhooks
+
+Webhooks nunca devem chegar diretamente ao navegador.
+
+Fluxo:
+
+```text
+gateway
+   ↓
+endpoint no servidor
+   ↓
+verificação de assinatura
+   ↓
+idempotência
+   ↓
+registro do evento
+   ↓
+normalização
+   ↓
+serviço de negócio
+   ↓
+entitlement ou membership
+```
+
+Requisitos:
+
+- assinatura validada;
+- idempotência;
+- replay seguro;
+- logs;
+- ambientes separados;
+- segredo fora do código;
+- valores confirmados no servidor;
+- tratamento de falha;
+- auditoria.
+
+Eventos internos:
+
+```text
+payment.created
+payment.confirmed
+payment.failed
+payment.refunded
+membership.started
+membership.renewed
+membership.expired
+entitlement.granted
+entitlement.revoked
+```
+
+---
+
+## 28. Adaptadores de pagamento
+
+O domínio não deve conhecer o formato de um gateway.
+
+```text
+integrations/payments/provider-a
+integrations/payments/provider-b
+```
+
+Cada adaptador traduz eventos externos para eventos internos.
+
+Isso facilita trocar fornecedor.
+
+---
+
+# Parte VII — Recompensas, promoções e módulos regulados
+
+## 29. Rewards
+
+Recompensas não aleatórias podem incluir:
+
+- dias premium;
+- descontos;
+- cashback permitido;
+- conteúdo;
+- pontos;
+- benefícios definidos;
+- recompensa por indicação;
+- recompensa por uso consistente.
+
+O usuário deve saber exatamente o que recebe.
+
+---
+
+## 30. Promotions
+
+Promoções, sorteios, concursos e distribuição aleatória de prêmios devem ficar isolados.
+
+Manifesto conceitual:
+
+```js
+{
+  id: 'promotions',
+  category: 'regulated',
+  status: 'disabled',
+  requiresBackend: true,
+  requiresIdentity: true,
+  requiresLegalApproval: true,
+  requiresAuditLog: true,
+  requiresProductionGate: true
+}
+```
+
+Nenhum módulo regulado entra em produção apenas porque tecnicamente funciona.
+
+---
+
+## 31. Sorteios e participação paga
+
+Modelos em que pessoas pagam para receber chance aleatória de prêmio possuem risco jurídico, financeiro e reputacional elevado.
+
+Antes de qualquer implementação real:
+
+- análise jurídica especializada;
+- enquadramento legal;
+- autorização quando exigida;
+- regulamento;
+- identidade dos participantes;
+- auditoria;
+- prevenção de fraude;
+- prestação de contas;
+- política de reembolso;
+- política de menores;
+- revisão dos termos do gateway;
+- revisão da loja de aplicativos;
+- segregação financeira.
+
+Protótipos podem ser visuais e locais, mas devem permanecer desativados e sem dinheiro real.
+
+---
+
+# Parte VIII — Segurança e confiabilidade
+
+## 32. Segurança local
+
+- escapar conteúdo;
+- validar importações;
+- limitar tamanho de arquivos;
+- evitar `eval` e `new Function`;
+- não armazenar segredos no frontend;
+- proteção contra corrupção;
+- confirmação de ações destrutivas.
+
+---
+
+## 33. Segurança conectada
+
+- autenticação;
+- autorização;
+- rate limiting;
+- validação de webhook;
+- idempotência;
+- criptografia em trânsito;
+- segredos no ambiente;
+- logs sem dados sensíveis;
+- rotação de chaves;
+- princípio do menor privilégio;
+- proteção contra abuso;
+- trilha de auditoria.
+
+---
+
+## 34. Privacidade
+
+Antes de contas:
+
+- política de privacidade;
+- finalidade dos dados;
+- exportação;
+- exclusão;
+- retenção;
+- consentimento;
+- minimização;
+- separação de dados financeiros e promocionais.
+
+---
+
+# Parte IX — Testes e entrega
+
+## 35. Pirâmide de testes
+
+### Unitários
+
+- cálculos;
+- validações;
+- datas;
+- custos;
+- projeções.
+
+### Contratos
+
+- manifestos;
 - eventos;
-- importação e migração;
-- registro e recálculo;
-- feature flags.
+- repositórios;
+- adaptadores.
 
-### Testes E2E
+### Migrações
 
-Para:
+- versões antigas;
+- dados incompletos;
+- rollback;
+- backups.
 
-1. onboarding;
-2. preservação de dados após atualização;
-3. custos alterando metas;
-4. registro alterando dashboard;
-5. backup e importação;
-6. funcionamento offline;
-7. atualização sem loop;
-8. instrução correta de instalação;
-9. aplicativo aberto sem senha;
-10. módulo experimental ativado e desativado sem quebrar o núcleo.
+### Integração
+
+- custo altera meta;
+- registro altera dashboard;
+- importação preserva dados;
+- módulo desativado não quebra núcleo.
+
+### E2E
+
+- onboarding;
+- primeiro registro;
+- histórico;
+- backup;
+- PWA;
+- atualização;
+- instalação;
+- modo offline.
+
+### Segurança
+
+- segredos;
+- inputs;
+- importações;
+- webhooks;
+- permissões.
 
 ---
 
-## 40. Testes por módulo
+## 36. GitHub Actions
 
-Cada módulo deve possuir:
-
-- teste do manifesto;
-- teste de contrato;
-- teste das regras;
-- teste de estado vazio;
-- teste de falha;
-- teste de ativação/desativação;
-- teste de dados antigos quando aplicável.
-
-O pipeline deve conseguir executar os testes de um módulo isoladamente.
-
----
-
-## 41. GitHub Actions
-
-Executar em Pull Requests:
+Em Pull Requests:
 
 - instalação limpa;
-- testes unitários;
-- testes de contrato;
-- testes de migração;
+- testes;
+- verificação estrutural;
 - build;
-- inspeção de `dist`;
-- verificação do manifesto PWA;
-- Playwright crítico;
-- busca por segredos;
-- validação de módulos;
-- verificação de dependências circulares quando possível.
+- inspeção de saída;
+- manifesto;
+- service worker;
+- imports;
+- segredos acidentais;
+- Playwright;
+- testes de migração.
 
-Scripts devem funcionar localmente e não somente no GitHub Actions.
-
----
-
-## 42. Deploy Preview
-
-Toda mudança de interface, módulo ou fluxo deve gerar preview.
-
-Checklist:
-
-- Android;
-- iPhone quando aplicável;
-- tela pequena;
-- offline;
-- dados existentes;
-- dados vazios;
-- atualização;
-- acessibilidade básica;
-- módulo ligado e desligado.
+A `main` só recebe mudanças verdes.
 
 ---
 
-# Parte X — Testes com usuários
+## 37. Netlify
 
-## 43. Roteiro mínimo
+Uso recomendado:
 
-Pedir para uma pessoa:
-
-1. entender a proposta;
-2. concluir onboarding;
-3. configurar combustível;
-4. cadastrar custo;
-5. encontrar a meta;
-6. registrar um dia;
-7. interpretar o resultado;
-8. consultar histórico;
-9. exportar backup;
-10. instalar o PWA.
-
-Não explicar durante o teste, salvo bloqueio completo.
-
-Registrar:
-
-- termos que causaram dúvida;
-- campos incorretos;
-- botões não encontrados;
-- números não compreendidos;
-- expectativas diferentes;
-- partes consideradas úteis ou desnecessárias.
+- Deploy Preview para testar;
+- produção após aprovação;
+- evitar testes repetidos na `main`;
+- site estático enquanto possível;
+- remover extensões sem uso;
+- não ativar banco ou functions antes da necessidade.
 
 ---
 
-## 44. Validação de módulos experimentais
+## 38. Independência de fornecedores
 
-Cada experimento deve possuir perguntas específicas:
+O projeto deve poder migrar.
 
-- a pessoa encontrou o recurso?
-- entendeu para que serve?
-- usaria novamente?
-- mudou uma decisão?
-- adicionou confusão?
-- tornou o fluxo mais lento?
-- pareceu confiável?
+Regras:
 
-A opinião de quem desenvolveu não deve ser a única evidência para manter uma função.
+- build padrão;
+- pasta estática;
+- variáveis documentadas;
+- scripts locais;
+- regras financeiras sem dependência de Netlify;
+- dados exportáveis;
+- adaptadores para integrações;
+- documentação de migração.
 
 ---
 
-# Parte XI — Etapas de aplicação
+# Parte X — Governança técnica
 
-## 45. Etapa 0 — estabilização da infraestrutura
+## 39. ADRs
 
-- consolidar Netlify;
-- remover resíduos de senha;
-- remover extensões desnecessárias;
-- garantir build estático;
-- identificar commit e versão;
-- validar atualização;
-- impedir publicação de legado.
+Decisões importantes terão arquivos em `docs/ADR/`.
+
+Exemplos:
+
+```text
+ADR-0001-usar-vite.md
+ADR-0002-local-first.md
+ADR-0003-registro-de-modulos.md
+ADR-0004-indexeddb.md
+ADR-0005-feature-flags.md
+ADR-0006-backend-futuro.md
+ADR-0007-pagamentos.md
+```
+
+---
+
+## 40. Definition of Done
+
+Uma tarefa só está concluída quando:
+
+- requisito atendido;
+- testes relevantes passam;
+- build passa;
+- dados preservados;
+- acessibilidade revisada;
+- linguagem revisada;
+- Deploy Preview testado;
+- documentação atualizada;
+- flag possui destino;
+- riscos registrados;
+- nenhuma mudança fora de escopo.
+
+---
+
+# Parte XI — Plano de implementação
+
+## Fase 0 — Estabilização
+
+### Objetivo
+
+Build, deploy e PWA previsíveis.
+
+### Entregas
+
+- Netlify estável;
+- remoção de resíduos de senha;
+- remoção de extensões desnecessárias;
+- versão visível;
+- diagnóstico;
+- saída publicada validada;
+- service worker confiável.
 
 ### Conclusão
 
-Mesmo commit identificável no GitHub, no deploy e no aplicativo.
+O mesmo commit é identificável no GitHub, Netlify e aplicativo.
 
 ---
 
-## 46. Etapa 1 — fundação modular
+## Fase 1 — Fundação modular mínima
 
-- criar bootstrap;
-- criar registro de módulos;
-- definir manifesto;
-- criar event bus simples;
-- criar feature flags;
-- definir contratos de armazenamento;
-- documentar limites entre núcleo e módulos;
-- criar teste de ativação e desativação.
+### Entregas
 
-### Conclusão
+- `app/bootstrap`;
+- registro de módulos;
+- feature flags;
+- eventos internos;
+- contrato de manifesto;
+- diagnóstico de módulos;
+- módulo simples de prova.
 
-Um módulo de demonstração deve poder ser registrado, exibido, desativado e removido sem mudar o núcleo.
+### Prova
+
+Um módulo pode ser ativado, desativado e removido sem alterar o núcleo.
 
 ---
 
-## 47. Etapa 2 — linguagem didática
+## Fase 2 — Linguagem didática
+
+### Entregas
 
 - substituir “rendimento”;
 - revisar termos;
-- incluir unidades;
-- incluir exemplos;
-- melhorar erros;
-- diferenciar estimativa de registro.
+- unidades;
+- textos auxiliares;
+- exemplos;
+- erros humanos;
+- glossário.
 
-### Conclusão
+### Prova
 
-Pessoa nova configura combustível sem ajuda.
+Usuário novo preenche configuração sem ajuda.
 
 ---
 
-## 48. Etapa 3 — onboarding
+## Fase 3 — Onboarding
 
-- construir fluxo;
+### Entregas
+
+- fluxo completo;
 - salvar progresso;
-- permitir voltar;
-- permitir pular;
-- permitir refazer;
-- calcular primeira meta;
-- testar com pessoa nova.
+- refazer;
+- primeira meta;
+- primeira ação;
+- teste com usuário real.
 
 ---
 
-## 49. Etapa 4 — consolidação Vite
+## Fase 4 — Consolidação Vite
 
-- migrar domínio;
-- migrar armazenamento;
-- migrar telas;
-- obter paridade funcional;
-- preservar dados;
-- eliminar patches e `.part`;
-- gerar `dist` estático.
+### Entregas
 
-A migração deve ocorrer por módulos, não por reescrita total sem pontos de controle.
-
----
-
-## 50. Etapa 5 — fechamento diário
-
-- melhorar formulário;
-- incluir opcionais;
-- gerar feedback;
-- recalcular módulos dependentes por evento.
+- domínio financeiro modular;
+- armazenamento desacoplado;
+- telas por módulo;
+- build `dist`;
+- paridade funcional;
+- remoção gradual do legado.
 
 ---
 
-## 51. Etapa 6 — histórico e gráficos
+## Fase 5 — Fechamento diário
+
+### Entregas
+
+- formulário melhor;
+- custos opcionais;
+- feedback;
+- métricas;
+- edição;
+- validação.
+
+---
+
+## Fase 6 — Histórico e gráficos
+
+### Entregas
 
 - filtros;
-- indicadores;
 - comparações;
 - acessibilidade;
-- gráficos como módulo substituível.
+- gráficos;
+- indicadores.
 
 ---
 
-## 52. Etapa 7 — custos e manutenção
+## Fase 7 — Custos e manutenção
 
-- ampliar categorias;
-- criar manutenção como módulo opcional;
-- simular impacto;
-- validar valor com usuários.
+### Entregas
+
+- categorias;
+- manutenção;
+- reservas;
+- simulações;
+- alertas locais.
 
 ---
 
-## 53. Etapa 8 — relatórios e backup
+## Fase 8 — Relatórios e backup
 
-- JSON;
-- CSV;
+### Entregas
+
+- relatório mensal;
 - PDF;
+- CSV;
+- JSON;
 - importação segura;
-- relatório mensal modular.
+- compartilhamento.
 
 ---
 
-## 54. Etapa 9 — IndexedDB
+## Fase 9 — IndexedDB
 
-- repositórios;
-- stores;
+### Entregas
+
+- camada de repositório;
 - migração;
 - snapshots;
-- testes de volume;
-- compatibilidade de backups.
+- recuperação;
+- grandes volumes.
 
 ---
 
-## 55. Etapa 10 — inteligência local
+## Fase 10 — Inteligência local
 
-- módulo de insights;
-- regras explicáveis;
-- limites mínimos de dados;
-- feature flag inicial;
-- possibilidade de remoção completa.
+### Entregas
+
+- insights;
+- tendências;
+- projeções;
+- explicabilidade;
+- limites de segurança.
 
 ---
 
-## 56. Etapa 11 — acabamento
+## Fase 11 — Laboratório de módulos
+
+### Entregas
+
+- catálogo experimental;
+- flags;
+- dados isolados;
+- promoção e descarte;
+- templates de experimento.
+
+---
+
+## Fase 12 — Acabamento
+
+### Entregas
 
 - acessibilidade;
 - modo escuro;
 - iPhone;
 - desempenho;
-- revisão visual;
-- diagnóstico;
-- testes completos.
+- design;
+- revisão de conteúdo.
 
 ---
 
-# Parte XII — Operação eficiente
+## Fase 13 — Validação do produto local
 
-## 57. Uso do Netlify
+### Critérios
 
-- testar em Deploy Preview;
-- usar produção apenas após aprovação;
-- evitar vários commits de tentativa na `main`;
-- manter hospedagem estática;
-- não ativar Functions ou banco sem necessidade;
-- revisar extensões instaladas;
-- documentar configuração de hospedagem.
-
----
-
-## 58. Uso do GitHub
-
-- branches por mudança;
-- PRs com objetivo claro;
-- commits coerentes;
-- testes automáticos;
-- documentação no repositório;
-- proteção da `main` quando o fluxo estiver estável;
-- evitar workflows redundantes.
+- uso por vários meses;
+- onboarding sem ajuda;
+- PWA estável;
+- backups confiáveis;
+- dados preservados;
+- relatórios úteis;
+- valor confirmado por usuários.
 
 ---
 
-# Parte XIII — Quando entrar em login e backend
+## Fase 14 — Identidade e sincronização
 
-## 59. Sinais reais de necessidade
+Somente após validação.
 
-Login e backend só devem entrar quando houver necessidade comprovada de:
+### Entregas
 
-- usar dados em vários aparelhos;
-- recuperar dados após perda;
-- compartilhar conta;
-- administrar usuários;
-- cobrar assinatura;
-- sincronizar automaticamente;
-- enviar notificações remotas;
-- acessar painel remoto;
-- manter dados centralizados.
-
-Perguntas obrigatórias:
-
-- usuários pediram sincronização?
-- quantos usam mais de um aparelho?
-- backup manual é insuficiente?
-- há necessidade de recuperação de conta?
-- existe modelo de receita?
-- quais dados precisam do servidor?
-- qual custo de suporte e segurança?
-- como será exclusão e exportação?
+- identidade mínima;
+- conta opcional;
+- sincronização;
+- conflitos;
+- recuperação;
+- exclusão.
 
 ---
 
-## 60. Preparação sem construir backend agora
+## Fase 15 — Pagamentos e acesso premium
 
-Mesmo sem backend, preparar:
+### Entregas
 
-- IDs estáveis;
-- timestamps;
-- repositórios;
-- separação entre domínio e armazenamento;
-- formato de backup versionado;
-- conflitos documentados;
-- módulos sem dependência de localStorage direto.
-
-Isso reduz o custo de sincronização futura sem introduzir servidor prematuramente.
-
----
-
-# Parte XIV — Governança do projeto
-
-## 61. Definição de pronto
-
-Uma entrega só está pronta quando:
-
-- atende ao objetivo;
-- possui testes proporcionais;
-- preserva dados;
-- funciona no preview;
-- foi verificada em aparelho real quando necessário;
-- não adiciona segredo;
-- não cria dependência oculta;
-- atualiza documentação relevante;
-- possui caminho de reversão;
-- não deixa código morto.
+- billing;
+- webhooks;
+- entitlements;
+- membership;
+- conciliação;
+- auditoria;
+- ambiente sandbox;
+- planos.
 
 ---
 
-## 62. Revisão periódica
+## Fase 16 — Recompensas
 
-A cada ciclo relevante, revisar:
+### Entregas
 
-- módulos ativos;
-- experimentos abertos;
-- flags antigas;
-- dependências;
-- custos de hospedagem;
-- erros de usuários;
-- desempenho;
-- documentação;
-- riscos de dados;
-- recursos sem uso.
+- benefícios previsíveis;
+- pontos;
+- indicação;
+- regras;
+- antifraude;
+- testes.
 
 ---
 
-## 63. Backlog por categorias
+## Fase 17 — Promoções reguladas
 
-O backlog deve separar:
+Somente com aprovação jurídica e operacional.
 
-- estabilidade;
-- clareza;
-- núcleo;
-- módulos oficiais;
-- experimentos;
-- dívida técnica;
-- acessibilidade;
-- dados;
-- infraestrutura;
-- pesquisa com usuários.
+### Entregas possíveis
 
-Uma ideia experimental não deve entrar diretamente no backlog do núcleo.
-
----
-
-## 64. Registro de experimentos
-
-Criar futuramente `docs/EXPERIMENTS.md` com:
-
-- nome;
-- hipótese;
-- módulo;
-- flag;
-- responsável;
-- início;
-- critérios;
+- regulamento;
+- elegibilidade;
+- inscrições;
+- auditoria;
 - resultado;
-- decisão;
-- data de remoção ou promoção.
+- prestação de contas;
+- bloqueios de produção.
 
 ---
 
-# Parte XV — Prioridade imediata
+# Parte XII — Prioridade imediata
 
-## 65. Próxima sequência recomendada
+## Ciclo 1
 
-### Ciclo A — infraestrutura e documentação
+- estabilizar deploy;
+- verificar extensão Neon;
+- validar PWA;
+- exibir versão;
+- teste estrutural.
 
-1. validar o deploy público;
-2. remover extensão não utilizada;
-3. consolidar Vite e `dist`;
-4. identificar versão;
-5. criar os primeiros ADRs;
-6. criar documento de módulos.
+## Ciclo 2
 
-### Ciclo B — fundação modular mínima
+- criar registro modular mínimo;
+- manifesto;
+- eventos;
+- flags;
+- diagnóstico.
 
-1. criar registro de módulos;
-2. definir manifesto;
-3. criar feature flags locais;
-4. criar eventos internos;
-5. extrair serviços de domínio;
-6. criar teste de módulo removível.
+## Ciclo 3
 
-### Ciclo C — clareza
+- revisar linguagem;
+- combustível;
+- custo por km;
+- exemplos;
+- mensagens.
 
-1. trocar “Rendimento”;
-2. mostrar `km/L` ou `km/m³`;
-3. exibir custo por km;
-4. revisar termos ambíguos;
-5. adicionar textos auxiliares;
-6. testar com pessoa nova.
+## Ciclo 4
 
-### Ciclo D — onboarding
+- onboarding.
 
-1. criar módulo de onboarding;
-2. salvar progresso;
-3. calcular primeira meta;
-4. permitir refazer;
-5. testar entendimento.
+## Ciclo 5
 
-### Ciclo E — migração funcional
-
-1. migrar cada domínio;
-2. preservar compatibilidade;
-3. obter paridade;
-4. remover legado apenas depois dos testes.
+- iniciar migração modular Vite.
 
 ---
 
-# Parte XVI — Critérios da versão local completa
+# Parte XIII — Riscos principais
 
-## 66. O VETTA local estará maduro quando
-
-- uma pessoa nova concluir o fluxo sem ajuda;
-- os termos financeiros forem compreensíveis;
-- o aplicativo funcionar offline;
-- Android e iPhone tiverem orientação adequada;
-- dados sobreviverem a atualizações;
-- backups forem confiáveis;
-- relatórios forem úteis;
-- módulos puderem ser ligados e desligados;
-- experimentos puderem ser removidos sem resíduos;
-- testes impedirem regressões;
-- o produto suportar uso contínuo;
-- usuários reais confirmarem valor;
-- limitações sem sincronização estiverem claras;
-- hospedagem puder ser trocada sem reescrever o domínio.
+| Risco | Mitigação |
+|---|---|
+| Perda de dados | migrações, snapshots, backups e testes |
+| Aplicativo crescer acoplado | contratos, registro e eventos |
+| Experimentos permanentes | data de revisão e remoção obrigatória |
+| Custos de infraestrutura | local-first e Deploy Preview |
+| Dependência de fornecedor | adaptadores e build portátil |
+| Pagamento duplicado | idempotência |
+| Webhook falso | assinatura e segredo |
+| Recurso premium desbloqueado no frontend | confirmação no servidor |
+| Sorteio irregular | gate jurídico e módulo desativado |
+| Interface confusa | testes com usuários |
+| Cache antigo | política de atualização e diagnóstico |
+| Regressão financeira | testes determinísticos |
 
 ---
 
-# Parte XVII — Regra final de decisão
+# Parte XIV — Critérios para considerar a versão local completa
 
-Antes de implementar qualquer ideia, responder:
+- usuário novo entende o produto;
+- onboarding funciona sem ajuda;
+- termos são claros;
+- cálculos são transparentes;
+- dados sobrevivem a atualizações;
+- PWA funciona offline;
+- instalação é orientada;
+- backup é confiável;
+- relatórios são úteis;
+- módulos são isolados;
+- experimentos podem ser removidos;
+- testes impedem regressões;
+- desempenho permanece adequado;
+- uso real confirma valor.
 
-1. Qual problema real ela resolve?
-2. Ela pertence ao núcleo, a um módulo oficial ou a um experimento?
-3. Pode ser ativada e removida com segurança?
-4. Quais dados cria ou altera?
-5. Como será testada?
-6. Como saberemos se funcionou?
-7. Qual o custo de manutenção?
-8. Depende de serviço externo?
-9. Existe alternativa mais simples?
-10. O projeto continuará compreensível depois dessa mudança?
+---
 
-O objetivo do VETTA não é possuir o maior número possível de funções. É possuir funções úteis, confiáveis, compreensíveis e evolutivas, sustentadas por uma base modular que permita aprender sem transformar cada teste em uma obrigação permanente.
+# Parte XV — Próxima decisão
+
+A próxima implementação arquitetural deve provar a modularidade com baixo risco.
+
+Entregar:
+
+1. registro de módulos;
+2. manifesto;
+3. feature flag;
+4. evento interno;
+5. diagnóstico;
+6. módulo de demonstração removível;
+7. testes de ativação, desativação e remoção;
+8. documentação em `docs/MODULES.md`.
+
+Depois dessa fundação, iniciar a revisão didática e o onboarding.
+
+---
+
+## Regra final
+
+O VETTA deve crescer como uma plataforma, mas continuar funcionando como um aplicativo simples.
+
+Tecnologia deve reduzir risco, custo e confusão. Não deve existir apenas para parecer moderna.
+
+Toda ideia futura deve poder entrar por um módulo, provar valor e sair sem destruir o restante do produto.
