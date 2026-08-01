@@ -1,0 +1,64 @@
+name: Release VETTA 3.5.1 to Netlify
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: github.head_ref == 'ops/netlify-production-3.5.1' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NETLIFY_SITE_ID: 1aee8ea6-d05c-4bbc-9341-94555a23f725
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+    steps:
+      - name: Checkout exact release
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify production source
+        run: |
+          test ! -d parts
+          test ! -f vetta-3.4.3.js
+          test ! -f vetta-3.4.4.js
+          node --check app.js
+          node --check sw.js
+          node tests/verify-production.mjs
+
+      - name: Verify Netlify credential
+        shell: bash
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN" || { echo 'NETLIFY_AUTH_TOKEN ausente'; exit 1; }
+
+      - name: Deploy exact static release
+        run: |
+          npx --yes netlify-cli@latest deploy \
+            --prod \
+            --dir=. \
+            --site="$NETLIFY_SITE_ID" \
+            --message="VETTA 3.5.1 ${GITHUB_SHA}"
+
+      - name: Verify live Netlify release
+        shell: bash
+        run: |
+          for attempt in {1..12}; do
+            INDEX="$(curl -fsSL -H 'Cache-Control: no-cache' 'https://vetta-driver-intelligence.netlify.app/?release=3.5.1')" || true
+            APP="$(curl -fsSL -H 'Cache-Control: no-cache' 'https://vetta-driver-intelligence.netlify.app/app.js?release=3.5.1')" || true
+            if grep -q 'app.js?v=3.5.1' <<<"$INDEX" && grep -q "const APP_RELEASE = '3.5.1'" <<<"$APP"; then
+              echo 'Netlify serve VETTA 3.5.1'
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'A URL pública não entregou a versão 3.5.1 no prazo esperado.'
+          exit 1
