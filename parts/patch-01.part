@@ -1,0 +1,62 @@
+(() => {
+  const RELEASE = '3.1.0';
+  const costTemplates = {
+    custom: { help: 'Escolha manualmente a finalidade e a frequência.', placeholder: 'Ex.: Seguro, parcela, pneus' },
+    debt: { category: 'obligation', kind: 'monthly', placeholder: 'Ex.: Parcela do carro', help: 'Uma conta mensal que precisa ser paga com o trabalho.' },
+    monthly: { category: 'obligation', kind: 'monthly', placeholder: 'Ex.: Seguro ou internet', help: 'Uma despesa que se repete todos os meses.' },
+    weekly: { category: 'obligation', kind: 'weekly', placeholder: 'Ex.: Aluguel semanal', help: 'O VETTA converte o valor semanal para o planejamento mensal.' },
+    per_km: { category: 'reserve', kind: 'per_km', placeholder: 'Ex.: Pneus e manutenção', help: 'Esse valor cresce junto com a quilometragem rodada.' },
+    reserve: { category: 'reserve', kind: 'monthly', placeholder: 'Ex.: Reserva de emergência', help: 'Dinheiro que você quer separar todos os meses.' },
+    one_time: { category: 'obligation', kind: 'one_time', placeholder: 'Ex.: Conserto ou fatura', help: 'Entra somente no mês selecionado e depois sai da meta.' }
+  };
+
+  defaults.version = 4;
+  defaults.closings = [];
+  defaults.costs = defaults.costs.map(cost => cost.id === 'fixed-default'
+    ? { ...cost, name: 'Outros custos mensais', legacySource: false }
+    : cost);
+
+  const injectUi = () => {
+    if (!document.getElementById('vettaPatchStyles')) {
+      const style = document.createElement('style'); style.id = 'vettaPatchStyles'; style.textContent = `.update-banner{position:fixed;z-index:95;left:50%;bottom:105px;transform:translateX(-50%);width:min(92vw,500px);padding:14px;border-radius:20px;background:linear-gradient(135deg,#1D4ED8,#2563EB);box-shadow:0 18px 45px rgba(37,99,235,.35);display:flex;align-items:center;justify-content:space-between;gap:12px}.update-banner.hidden{display:none}.record-metric{border-radius:16px;padding:13px;background:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.8)}.legacy-note{margin-top:9px;padding:9px 11px;border-radius:12px;background:#EFF6FF;color:#1D4ED8;font-size:10px;line-height:1.45}`; document.head.appendChild(style);
+    }
+    const percentRow = document.getElementById('drePercent')?.parentElement;
+    if (percentRow) percentRow.remove();
+    if (!document.getElementById('drePercent')) {
+      const hidden = document.createElement('span'); hidden.id = 'drePercent'; hidden.className = 'hidden'; document.body.appendChild(hidden);
+    }
+
+    const costSummary = document.getElementById('costSummary');
+    if (costSummary) {
+      const card = costSummary.closest('.card-vetta');
+      const title = card?.querySelector('.label-micro');
+      const description = title?.parentElement?.querySelector('p');
+      if (title) title.textContent = 'Custos e reservas';
+      if (description) description.textContent = 'Diga para onde o dinheiro precisa ir. O VETTA inclui cada valor na sua meta.';
+      if (!document.getElementById('upcomingCosts')) {
+        const upcoming = document.createElement('div'); upcoming.id = 'upcomingCosts'; upcoming.className = 'mt-5'; card?.appendChild(upcoming);
+      }
+    }
+
+    const reportButton = document.getElementById('reportButton');
+    const reportCard = reportButton?.closest('.card-vetta');
+    if (reportCard && !document.getElementById('personalRanking')) {
+      reportCard.insertAdjacentHTML('beforebegin', `
+        <div class="card-vetta p-6 bg-gradient-to-br from-amber-50 to-white"><div class="flex justify-between items-start"><div><span class="label-micro !text-amber-700">Ranking pessoal</span><h3 class="font-extrabold text-lg">Seus próprios recordes</h3><p class="text-xs text-slate-500 mt-1">Comparação somente com seu histórico neste aparelho.</p></div><i class="fas fa-trophy text-amber-500 text-xl"></i></div><div id="personalRanking" class="grid grid-cols-2 gap-3 mt-5"></div></div>
+        <div class="card-vetta p-6"><div class="flex justify-between items-start gap-3"><div><span class="label-micro !text-vetta-900">Fechamento mensal</span><h3 class="font-extrabold">Guarde o retrato de cada mês</h3></div><input id="closingMonth" type="month" class="input-vetta no-mask !w-[145px]"></div><div id="closingSummary" class="mt-4"></div><button id="saveClosingButton" class="w-full mt-4 py-3 rounded-2xl bg-emerald-500 text-white text-xs font-extrabold">SALVAR FECHAMENTO</button><div id="closingList" class="space-y-3 mt-5"></div></div>`);
+      reportCard.innerHTML = `<span class="label-micro !text-vetta-900">Relatório do mês</span><p class="text-xs text-slate-500 mb-4">Gere um resumo pronto para imprimir, salvar ou compartilhar.</p><div class="grid grid-cols-2 gap-3"><button id="reportButton" class="py-4 rounded-2xl bg-vetta-900 text-white text-xs font-extrabold"><i class="fas fa-file-lines mr-2"></i>Relatório</button><button id="shareSummaryButton" class="py-4 rounded-2xl bg-blue-50 text-blue-600 text-xs font-extrabold"><i class="fas fa-share-nodes mr-2"></i>Compartilhar</button></div>`;
+    }
+
+    const installCard = document.getElementById('installCardButton');
+    if (installCard && !document.getElementById('appVersionLabel')) {
+      const strong = installCard.querySelector('strong');
+      strong?.insertAdjacentHTML('afterend', `<span id="appVersionLabel" class="block text-[10px] text-slate-400 mt-1">Versão ${RELEASE}</span>`);
+    }
+
+    const installModal = document.getElementById('installModal');
+    if (installModal && !document.getElementById('updateBanner')) {
+      installModal.insertAdjacentHTML('beforebegin', `<div id="updateBanner" class="update-banner hidden"><div><span class="label-micro !mb-0 !text-blue-200">Nova versão disponível</span><strong id="updateVersionText" class="block text-white">Atualização pronta</strong></div><div class="flex gap-2"><button id="updateLaterButton" class="px-3 py-2 rounded-xl bg-white/10 text-white text-[10px] font-bold">DEPOIS</button><button id="updateNowButton" class="px-3 py-2 rounded-xl bg-white text-blue-700 text-[10px] font-extrabold">ATUALIZAR</button></div></div>`);
+    }
+
+    const costModal = document.getElementById('costModal');
+    if (costModal) costModal.innerHTML = `<div class="modal-sheet"><div class="flex justify-between"><div><span class="label-micro !text-blue-600">Planejamento financeiro</span><h3 id="costModalTitle" class="text-xl font-extrabold">Adicionar custo</h3></div><button id="closeCostModal" class="w-9 h-9 rounded-full bg-slate-100"><i class="fas fa-xmark"></i></button></div><input id="costId" type="hidden"><div class="space-y-4 mt-5"><div><label class="label-micro">O que você quer adicionar?</label><select id="costTemplate" class="input-vetta"><option value="custom">Escolher livremente</option><option value="debt">Parcela ou dívida</option><option value="monthly">Despesa mensal</option><option value="weekly">Despesa semanal</option><option value="per_km">Custo do veículo por km</option><option value="reserve">Reserva ou objetivo</option><option value="one_time">Despesa única deste mês</option></select><p id="costTemplateHelp" class="text-xs text-slate-500 mt-2">Escolha uma opção e o VETTA organiza a forma de cálculo.</p></div><div><label class="label-micro">Nome que aparecerá no aplicativo</label><input id="costName" class="input-vetta no-mask" placeholder="Ex.: Seguro, parcela do carro, pneus"></div><div class="grid grid-cols-2 gap-3"><div><label class="label-micro">Finalidade</label><select id="costCategory" class="input-vetta"><option value="obligation">Conta ou obrigação</option><option value="reserve">Reserva ou objetivo</option></select></div><div><label class="label-micro">Como esse valor acontece?</label><select id="costKind" class="input-vetta"><option value="monthly">Todo mês</option><option value="weekly">Toda semana</option><option value="per_km">A cada km rodado</option><option value="one_time">Somente neste mês</option></select></div></div><div><label id="costValueLabel" class="label-micro">Valor</label><div class="input-wrapper"><span id="costValuePrefix">R$</span><input id="costValue" type="number" step=".01" class="input-vetta"></div></div><div id="costDueDayWrap"><label class="label-micro">Dia do vencimento (opcional)</label><input id="costDueDay" type="number" min="1" max="31" class="input-vetta no-mask" placeholder="Ex.: 10"></div><div id="costMonthWrap" class="hidden"><label clas
