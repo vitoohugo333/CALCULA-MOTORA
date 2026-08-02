@@ -29,6 +29,10 @@ async function emulateIphone(page, browserToken = 'Version/18.0') {
 }
 
 async function openInstalled(page, state = installedState) {
+  page.on('pageerror', error => console.log(`[PAGE_ERROR] ${error.stack || error.message}`));
+  page.on('console', message => {
+    if (message.type() === 'error') console.log(`[BROWSER_ERROR] ${message.text()}`);
+  });
   await page.addInitScript(({ key, storedState }) => {
     window.__VETTA_PWA_TEST_MODE__ = 'installed';
     if (storedState) localStorage.setItem(key, JSON.stringify(storedState));
