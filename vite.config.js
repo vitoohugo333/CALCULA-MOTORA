@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
@@ -8,6 +8,7 @@ const preparedRoot = path.join(repositoryRoot, '_site');
 const outputRoot = path.join(repositoryRoot, 'dist');
 const compatibilityFiles = [
   'app.js',
+  'styles.css',
   'sw.js',
   'manifest.webmanifest',
   'icon.svg',
@@ -30,6 +31,18 @@ function legacyCompatibilityPlugin() {
         if (!existsSync(source)) throw new Error(`Arquivo necessário ausente no preparo Vite: ${file}`);
         copyFileSync(source, path.join(outputRoot, file));
       }
+
+      const outputIndex = path.join(outputRoot, 'index.html');
+      const builtHtml = readFileSync(outputIndex, 'utf8');
+      const stableManifestLink = '<link rel="manifest" href="./manifest.webmanifest">';
+      const correctedHtml = builtHtml.replace(
+        /<link rel="manifest"[^>]*href="\.\/assets\/manifest-[^"]+\.webmanifest"[^>]*>/,
+        stableManifestLink,
+      );
+      if (!correctedHtml.includes(stableManifestLink)) {
+        throw new Error('O HTML final não preservou o manifesto PWA na raiz do aplicativo.');
+      }
+      writeFileSync(outputIndex, correctedHtml);
     },
   };
 }
