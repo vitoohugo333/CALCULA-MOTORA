@@ -4,21 +4,27 @@
   "version": "3.5.1",
   "type": "module",
   "scripts": {
-    "test": "npm run test:platform && npm run test:pwa-gate && npm run test:didactic-language && npm run test:onboarding",
+    "test": "npm run test:platform && npm run test:pwa-gate && npm run test:didactic-language && npm run test:onboarding && npm run test:finance-domain && npm run test:storage",
     "test:platform": "node --test tests/platform.test.mjs",
     "test:pwa-gate": "node --test tests/pwa-install-gate.test.mjs",
     "test:didactic-language": "node --test tests/didactic-language.test.mjs",
     "test:onboarding": "node --test tests/onboarding-core.test.mjs",
+    "test:finance-domain": "node --test tests/finance-domain.test.mjs",
+    "test:storage": "node --test tests/local-state-store.test.mjs",
     "test:e2e": "playwright test",
     "test:pages-e2e": "playwright test --config=playwright.pages.config.js",
     "prepare:pages": "node scripts/prepare-pages.mjs",
+    "build": "npm run prepare:pages && vite build",
+    "verify:vite-build": "node scripts/verify-vite-build.mjs",
     "check:platform": "node --check src/platform/manifest.js && node --check src/platform/event-bus.js && node --check src/platform/feature-flags.js && node --check src/platform/module-registry.js && node --check src/platform/diagnostics.js && node --check src/platform/index.js && node --check src/app/platform-runtime.js && node --check src/modules/platform-demo/index.js && npm run test:platform",
     "check:pwa-gate": "node --check src/pwa/install-gate-core.js && node --check pwa-install-gate.js && npm run test:pwa-gate",
     "check:didactic-language": "node --check src/ui/didactic-language-core.js && node --check didactic-language.js && npm run test:didactic-language",
-    "check:onboarding": "node --check src/onboarding/onboarding-core.js && node --check onboarding-experience.js && node --check scripts/prepare-pages.mjs && npm run test:onboarding",
+    "check:onboarding": "node --check src/onboarding/onboarding-core.js && node --check onboarding-experience.js && npm run test:onboarding",
+    "check:vite": "node --check src/domain/finance/calculations.js && node --check src/storage/local-state-store.js && node --check src/vite/parity.js && node --check src/vite/main.js && node --check vite.config.js && node --check scripts/verify-vite-build.mjs && npm run test:finance-domain && npm run test:storage",
     "check:production": "node --check app.js && node --check sw.js && npm run check:platform && node tests/verify-production.mjs && playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "^1.54.2"
+    "@playwright/test": "^1.54.2",
+    "vite": "8.1.5"
   }
 }
