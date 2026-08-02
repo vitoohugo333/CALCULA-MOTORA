@@ -32,7 +32,13 @@ function ensureLabel(input, text, { create = false } = {}) {
   }
   if (!label) return null;
   if (input.id) label.setAttribute('for', input.id);
+  const preservedNodes = [...label.querySelectorAll('[id]')];
   label.textContent = text;
+  preservedNodes.forEach(node => {
+    node.hidden = true;
+    node.setAttribute('aria-hidden', 'true');
+    label.appendChild(node);
+  });
   return label;
 }
 
