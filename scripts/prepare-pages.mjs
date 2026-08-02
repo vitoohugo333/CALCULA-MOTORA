@@ -16,6 +16,8 @@ const rootFiles = [
   'pwa-install-gate.css',
   'didactic-language.js',
   'didactic-language.css',
+  'onboarding-experience.js',
+  'onboarding-experience.css',
 ];
 
 const branch = process.env.VETTA_DEV_BRANCH || 'local';
@@ -41,6 +43,8 @@ await mkdir(path.join(output, 'src', 'pwa'), { recursive: true });
 await cp('src/pwa/install-gate-core.js', path.join(output, 'src', 'pwa', 'install-gate-core.js'));
 await mkdir(path.join(output, 'src', 'ui'), { recursive: true });
 await cp('src/ui/didactic-language-core.js', path.join(output, 'src', 'ui', 'didactic-language-core.js'));
+await mkdir(path.join(output, 'src', 'onboarding'), { recursive: true });
+await cp('src/onboarding/onboarding-core.js', path.join(output, 'src', 'onboarding', 'onboarding-core.js'));
 
 const sourceHtml = await readFile('index.html', 'utf8');
 if (!sourceHtml.includes('</head>') || !sourceHtml.includes('</body>')) {
@@ -49,10 +53,12 @@ if (!sourceHtml.includes('</head>') || !sourceHtml.includes('</body>')) {
 
 const stylesheets = [
   '<link href="./didactic-language.css?v=phase-2" rel="stylesheet">',
+  '<link href="./onboarding-experience.css?v=phase-3" rel="stylesheet">',
   '<link href="./pwa-install-gate.css?v=exp-1" rel="stylesheet">',
 ].join('');
 const scripts = [
   '<script type="module" src="./didactic-language.js?v=phase-2"></script>',
+  '<script type="module" src="./onboarding-experience.js?v=phase-3"></script>',
   '<script type="module" src="./pwa-install-gate.js?v=exp-1"></script>',
 ].join('');
 const sourceMeta = [
@@ -67,9 +73,10 @@ const developmentHtml = sourceHtml
   .replace('</body>', `${sourceBadge}${scripts}</body>`);
 
 if (!developmentHtml.includes('didactic-language.js')
+  || !developmentHtml.includes('onboarding-experience.js')
   || !developmentHtml.includes('pwa-install-gate.js')
   || !developmentHtml.includes('vettaDevSource')) {
-  throw new Error('Fase didática, gate experimental ou identificação da branch não foram injetados no GitHub Pages.');
+  throw new Error('Fases de linguagem, onboarding, instalação ou identificação da branch não foram injetadas no GitHub Pages.');
 }
 
 const buildInfo = {
