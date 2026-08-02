@@ -8,7 +8,7 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:4174',
     browserName: 'chromium',
     headless: true,
-    serviceWorkers: 'allow',
+    serviceWorkers: 'block',
   },
   webServer: {
     command: 'python3 -m http.server 4174 --bind 127.0.0.1 --directory _site',
