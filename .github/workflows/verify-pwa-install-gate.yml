@@ -36,6 +36,13 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Verify inherited platform and production structure
+        run: |
+          node --check app.js
+          node --check sw.js
+          npm run check:platform
+          node tests/verify-production.mjs
+
       - name: Verify PWA gate modules
         run: npm run check:pwa-gate
 
