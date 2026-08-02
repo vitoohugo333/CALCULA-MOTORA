@@ -89,32 +89,24 @@ function relatedNode(element, relation) {
 
 function applyStaticText() {
   for (const item of STATIC_TEXT_REPLACEMENTS) {
-    const target = relatedNode(document.querySelector(item.selector), item.relation);
+    const element = document.querySelector(item.selector);
+    if (element?.closest('#view-dashboard')) continue;
+    const target = relatedNode(element, item.relation);
     if (target) target.textContent = item.text;
   }
 
-  const replacements = new Map([
-    ['Evolução do líquido', 'Quanto sobrou ao longo do tempo'],
-    ['Objetivo mensal líquido', 'Quanto você quer que sobre no mês'],
-    ['Líquido planejado', 'Quanto deve sobrar por dia'],
-    ['Líquido gerado', 'Quanto já sobrou'],
-    ['Projeção', 'Estimativa para o fim do mês'],
-    ['Meta líquida', 'Quanto deve sobrar'],
-    ['Média/km', 'Recebido por km'],
-    ['Receita/km', 'Quanto recebeu por km'],
+  const dayReplacements = new Map([
     ['Custo estimado', 'Gastos estimados'],
     ['Líquido do dia', 'Quanto sobrou no dia'],
-    ['Objetivo líquido', 'Quanto você quer que sobre'],
-    ['Faturamento bruto necessário', 'Total necessário antes dos custos'],
-    ['Rodagem mensal estimada', 'Quilômetros estimados no mês'],
-    ['Custos por km', 'Gastos que aumentam quando você roda'],
-    ['Taxas percentuais', 'Taxas sobre o que você recebe'],
-    ['Obrigações e reservas', 'Contas e dinheiro reservado'],
+    ['Receita/km', 'Quanto recebeu por km'],
   ]);
-  document.querySelectorAll('.label-micro, #view-dashboard span, #view-day span').forEach(node => {
-    const replacement = replacements.get(node.textContent.trim());
+  document.querySelectorAll('#view-day .label-micro, #view-day span').forEach(node => {
+    const replacement = dayReplacements.get(node.textContent.trim());
     if (replacement) node.textContent = replacement;
   });
+
+  const dashboard = document.getElementById('view-dashboard');
+  if (dashboard) dashboard.dataset.vettaVisualContract = 'preserved';
 }
 
 function currentFuelContext() {
