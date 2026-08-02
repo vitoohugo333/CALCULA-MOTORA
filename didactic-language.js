@@ -22,15 +22,16 @@ function ensureLabel(input, text, { create = false } = {}) {
   if (!input) return null;
   const container = fieldContainer(input);
   if (!container) return null;
-  let label = container.querySelector(`label[for="${input.id}"]`);
-  if (!label && !create) label = directLabel(container);
-  if (!label) {
+  let label = input.id ? container.querySelector(`label[for="${input.id}"]`) : null;
+  if (!label) label = directLabel(container);
+  if (!label && create) {
     label = document.createElement('label');
     label.className = 'label-micro';
     const anchor = input.closest('.input-wrapper') || input;
     anchor.before(label);
   }
-  label.setAttribute('for', input.id);
+  if (!label) return null;
+  if (input.id) label.setAttribute('for', input.id);
   label.textContent = text;
   return label;
 }
@@ -58,37 +59,50 @@ function setFieldCopy(input, label, help, options = {}) {
   ensureHelp(input, help);
 }
 
+function setOptionText(select, value, text) {
+  const option = select?.querySelector(`option[value="${value}"]`);
+  if (option) option.textContent = text;
+}
+
 function relatedNode(element, relation) {
   if (!element) return null;
   if (relation === 'previous') return element.previousElementSibling;
   if (relation === 'label') {
-    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName)) return ensureLabel(element, '', {});
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName)) return ensureLabel(element, '');
     return directLabel(element.parentElement)
-      || element.parentElement?.querySelector('.label-micro, span');
+      || element.parentElement?.querySelector('.label-micro, span')
+      || null;
   }
   return null;
 }
 
 function applyStaticText() {
   for (const item of STATIC_TEXT_REPLACEMENTS) {
-    const element = document.querySelector(item.selector);
-    const target = relatedNode(element, item.relation);
+    const target = relatedNode(document.querySelector(item.selector), item.relation);
     if (target) target.textContent = item.text;
   }
 
-  document.querySelectorAll('.label-micro').forEach(label => {
-    const replacements = new Map([
-      ['Evolução do líquido', 'Quanto sobrou ao longo do tempo'],
-      ['Objetivo mensal líquido', 'Quanto você quer que sobre no mês'],
-      ['Líquido planejado', 'Quanto deve sobrar por dia'],
-      ['Líquido gerado', 'Quanto já sobrou'],
-      ['Projeção', 'Estimativa para o fim do mês'],
-      ['Meta líquida', 'Quanto deve sobrar'],
-      ['Média/km', 'Recebido por km'],
-      ['Receita/km', 'Quanto recebeu por km'],
-    ]);
-    const replacement = replacements.get(label.textContent.trim());
-    if (replacement) label.textContent = replacement;
+  const replacements = new Map([
+    ['Evolução do líquido', 'Quanto sobrou ao longo do tempo'],
+    ['Objetivo mensal líquido', 'Quanto você quer que sobre no mês'],
+    ['Líquido planejado', 'Quanto deve sobrar por dia'],
+    ['Líquido gerado', 'Quanto já sobrou'],
+    ['Projeção', 'Estimativa para o fim do mês'],
+    ['Meta líquida', 'Quanto deve sobrar'],
+    ['Média/km', 'Recebido por km'],
+    ['Receita/km', 'Quanto recebeu por km'],
+    ['Custo estimado', 'Gastos estimados'],
+    ['Líquido do dia', 'Quanto sobrou no dia'],
+    ['Objetivo líquido', 'Quanto você quer que sobre'],
+    ['Faturamento bruto necessário', 'Total necessário antes dos custos'],
+    ['Rodagem mensal estimada', 'Quilômetros estimados no mês'],
+    ['Custos por km', 'Gastos que aumentam quando você roda'],
+    ['Taxas percentuais', 'Taxas sobre o que você recebe'],
+    ['Obrigações e reservas', 'Contas e dinheiro reservado'],
+  ]);
+  document.querySelectorAll('.label-micro, #view-dashboard span, #view-day span').forEach(node => {
+    const replacement = replacements.get(node.textContent.trim());
+    if (replacement) node.textContent = replacement;
   });
 }
 
@@ -112,9 +126,8 @@ function applySettingsCopy() {
   if (fuelTitle) fuelTitle.textContent = 'Combustível usado nos cálculos';
   if (fuelDescription) fuelDescription.textContent = 'Esses dados definem quanto o combustível custa em cada quilômetro.';
 
-  const extraDays = document.querySelector('[data-model="extraDaysOff"]');
   setFieldCopy(
-    extraDays,
+    document.querySelector('[data-model="extraDaysOff"]'),
     'Quantos dias a mais você não trabalhará neste mês?',
     'Não conte as folgas semanais habituais. Informe apenas férias, compromissos ou outros dias extras.',
   );
@@ -131,18 +144,15 @@ function applySettingsCopy() {
   if (kindLabel) kindLabel.textContent = 'Como esse valor é calculado?';
 
   const category = document.getElementById('costCategory');
-  if (category) {
-    category.querySelector('[value="obligation"]').textContent = 'Conta ou gasto';
-    category.querySelector('[value="reserve"]').textContent = 'Dinheiro reservado';
-  }
+  setOptionText(category, 'obligation', 'Conta ou gasto');
+  setOptionText(category, 'reserve', 'Dinheiro reservado');
+
   const kind = document.getElementById('costKind');
-  if (kind) {
-    kind.querySelector('[value="monthly"]').textContent = 'Todo mês';
-    kind.querySelector('[value="weekly"]').textContent = 'Toda semana';
-    kind.querySelector('[value="per_km"]').textContent = 'A cada km rodado';
-    kind.querySelector('[value="percent"]').textContent = 'Percentual do que você recebe';
-    kind.querySelector('[value="one_time"]').textContent = 'Apenas neste mês';
-  }
+  setOptionText(kind, 'monthly', 'Todo mês');
+  setOptionText(kind, 'weekly', 'Toda semana');
+  setOptionText(kind, 'per_km', 'A cada km rodado');
+  setOptionText(kind, 'percent', 'Percentual do que você recebe');
+  setOptionText(kind, 'one_time', 'Apenas neste mês');
 }
 
 function applyDayCopy() {
@@ -169,15 +179,21 @@ function applyDayCopy() {
 }
 
 function applyOnboardingCopy() {
-  const fuelType = document.getElementById('onboardingFuelType')?.value || 'gasoline';
-  const copy = buildOnboardingCopy({ fuelType });
-  const target = document.getElementById('onboardingTarget');
-  setFieldCopy(target, copy.targetLabel, copy.targetHelp, { create: true });
+  const app = window.__vettaApp;
+  const step = app?.onboardingStep || 1;
+  const titles = ['Quanto você quer que sobre?', 'Quanto seu combustível custa?', 'Só mais dois dados'];
+  const title = document.getElementById('onboardingTitle');
+  if (title) title.textContent = titles[step - 1] || titles[0];
+
+  const copy = buildOnboardingCopy({
+    fuelType: document.getElementById('onboardingFuelType')?.value || 'gasoline',
+  });
+  setFieldCopy(document.getElementById('onboardingTarget'), copy.targetLabel, copy.targetHelp, { create: true });
   const daysLabel = document.querySelector('#onboardingStep1 > label');
   if (daysLabel) daysLabel.textContent = copy.daysLabel;
 
-  const intro = document.querySelector('#onboardingStep2 > p');
-  if (intro) intro.textContent = copy.fuelIntro;
+  const fuelIntro = document.querySelector('#onboardingStep2 > p');
+  if (fuelIntro) fuelIntro.textContent = copy.fuelIntro;
   setFieldCopy(document.getElementById('onboardingFuelPrice'), copy.priceLabel, copy.priceHelp);
   setFieldCopy(document.getElementById('onboardingFuelEff'), copy.efficiencyLabel, copy.efficiencyHelp);
   setFieldCopy(document.getElementById('onboardingRevenue'), copy.revenueLabel, copy.revenueHelp);
@@ -203,8 +219,9 @@ function glossaryMarkup() {
 
 function ensureGlossary() {
   const settings = document.getElementById('view-settings');
-  if (!settings || document.getElementById('didacticGlossary')) return;
-  settings.insertAdjacentHTML('beforeend', glossaryMarkup());
+  if (settings && !document.getElementById('didacticGlossary')) {
+    settings.insertAdjacentHTML('beforeend', glossaryMarkup());
+  }
 }
 
 function applyCostModalCopy() {
@@ -250,6 +267,7 @@ function patchApp() {
       ['Parâmetro atualizado com seus dados reais.', 'Valor atualizado com seus dados reais.'],
       ['Informe faturamento e quilômetros maiores que zero.', 'Confira quanto recebeu e quantos quilômetros rodou.'],
       ['Informe nome e valor do custo.', 'Confira o nome e o valor informado.'],
+      ['Informe um nome claro e um valor maior que zero.', 'Confira o nome e o valor informado.'],
       ['Informe uma meta mensal.', validationMessage('onboardingTarget')],
       ['Informe preço e rendimento.', 'Confira o preço do combustível e quantos quilômetros o veículo faz.'],
     ]);
@@ -282,14 +300,14 @@ function patchApp() {
       return this.toast(validationMessage('onboardingTarget'));
     }
     if (this.onboardingStep === 2) {
-      const preset = this.$('onboardingFuelType').value === 'gnv'
+      const context = this.$('onboardingFuelType').value === 'gnv'
         ? { unit: 'm³', label: 'GNV' }
         : { unit: 'L', label: '' };
       if (this.number(this.$('onboardingFuelPrice').value) <= 0) {
-        return this.toast(validationMessage('onboardingFuelPrice', preset));
+        return this.toast(validationMessage('onboardingFuelPrice', context));
       }
       if (this.number(this.$('onboardingFuelEff').value) <= 0) {
-        return this.toast(validationMessage('onboardingFuelEfficiency', preset));
+        return this.toast(validationMessage('onboardingFuelEfficiency', context));
       }
     }
     return originalNextOnboarding.call(this);
@@ -302,28 +320,32 @@ function patchApp() {
     return result;
   };
 
-  const originalSyncCostModal = app.syncCostModal;
-  app.syncCostModal = function didacticSyncCostModal(...args) {
-    const result = originalSyncCostModal.apply(this, args);
-    applyCostModalCopy();
-    return result;
-  };
+  if (typeof app.syncCostModal === 'function') {
+    const originalSyncCostModal = app.syncCostModal;
+    app.syncCostModal = function didacticSyncCostModal(...args) {
+      const result = originalSyncCostModal.apply(this, args);
+      applyCostModalCopy();
+      return result;
+    };
+  }
 
-  const originalRenderOnboardingStep = app.renderOnboardingStep;
-  app.renderOnboardingStep = function didacticRenderOnboardingStep(...args) {
-    const result = originalRenderOnboardingStep.apply(this, args);
-    const titles = ['Quanto você quer que sobre?', 'Quanto seu combustível custa?', 'Só mais dois dados'];
-    this.$('onboardingTitle').textContent = titles[this.onboardingStep - 1];
-    applyOnboardingCopy();
-    return result;
-  };
+  if (typeof app.renderOnboardingStep === 'function') {
+    const originalRenderOnboardingStep = app.renderOnboardingStep;
+    app.renderOnboardingStep = function didacticRenderOnboardingStep(...args) {
+      const result = originalRenderOnboardingStep.apply(this, args);
+      applyOnboardingCopy();
+      return result;
+    };
+  }
 
-  const originalRenderLearning = app.renderLearning;
-  app.renderLearning = function didacticRenderLearning(...args) {
-    const result = originalRenderLearning.apply(this, args);
-    applyLearningCopy();
-    return result;
-  };
+  if (typeof app.renderLearning === 'function') {
+    const originalRenderLearning = app.renderLearning;
+    app.renderLearning = function didacticRenderLearning(...args) {
+      const result = originalRenderLearning.apply(this, args);
+      applyLearningCopy();
+      return result;
+    };
+  }
 }
 
 function applyAll() {
@@ -338,11 +360,17 @@ function applyAll() {
 }
 
 function initialize() {
-  patchApp();
-  applyAll();
-  document.getElementById('fuelType')?.addEventListener('change', () => queueMicrotask(applyAll));
-  document.getElementById('onboardingFuelType')?.addEventListener('change', () => queueMicrotask(applyOnboardingCopy));
-  document.getElementById('costKind')?.addEventListener('change', () => queueMicrotask(applyCostModalCopy));
+  try {
+    patchApp();
+    applyAll();
+    document.getElementById('fuelType')?.addEventListener('change', () => queueMicrotask(applyAll));
+    document.getElementById('onboardingFuelType')?.addEventListener('change', () => queueMicrotask(applyOnboardingCopy));
+    document.getElementById('costKind')?.addEventListener('change', () => queueMicrotask(applyCostModalCopy));
+  } catch (error) {
+    document.documentElement.dataset.vettaDidacticLanguage = 'error';
+    console.error('Falha ao aplicar linguagem didática do VETTA.', error);
+    throw error;
+  }
 }
 
 if (document.readyState === 'loading') {
