@@ -1,0 +1,49 @@
+name: Verify PWA Install Gate
+
+on:
+  pull_request:
+    paths:
+      - 'src/pwa/**'
+      - 'pwa-install-gate.js'
+      - 'pwa-install-gate.css'
+      - 'scripts/prepare-pages.mjs'
+      - 'tests/pwa-install-gate.test.mjs'
+      - 'tests/pages-e2e/**'
+      - 'playwright.pages.config.js'
+      - 'manifest.webmanifest'
+      - 'icon-192.png'
+      - 'icon-512.png'
+      - 'apple-touch-icon.png'
+      - 'package.json'
+      - '.github/workflows/verify-pwa-install-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify PWA gate modules
+        run: npm run check:pwa-gate
+
+      - name: Prepare GitHub Pages artifact
+        run: npm run prepare:pages
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Test locked, iPhone and installed flows
+        run: npm run test:pages-e2e
