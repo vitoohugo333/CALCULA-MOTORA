@@ -166,5 +166,7 @@ test('modo instalado preserva o aplicativo e os dados existentes', async ({ page
   await openInstalled(page);
   await expect(page.locator('#vettaPwaInstallGate')).toHaveCount(0);
   await expect(page.locator('#targetProfitDisplay')).toContainText('R$ 4.000');
-  await expect(page.locator('body')).toContainText('Quanto você quer que sobre no mês');
+  await expect(page.locator('#view-dashboard')).toContainText('Objetivo mensal');
+  await expect(page.locator('#view-dashboard')).toContainText('Ajuste quanto deseja colocar no bolso.');
+  await expect(page.locator('#view-dashboard')).toHaveAttribute('data-vetta-visual-baseline', '889d8d5');
 });
