@@ -64,6 +64,11 @@ function setOptionText(select, value, text) {
   if (option) option.textContent = text;
 }
 
+function setPreviousText(element, text) {
+  const previous = element?.previousElementSibling;
+  if (previous) previous.textContent = text;
+}
+
 function relatedNode(element, relation) {
   if (!element) return null;
   if (relation === 'previous') return element.previousElementSibling;
@@ -201,6 +206,66 @@ function applyOnboardingCopy() {
 
   const finalIntro = document.querySelector('#onboardingStep3 > p');
   if (finalIntro) finalIntro.textContent = 'Use uma estimativa inicial. Você poderá corrigir tudo depois.';
+}
+
+function applyCompareCopy() {
+  const details = document.getElementById('compareDetails');
+  if (!details) return;
+  const intro = details.querySelector('summary + div > p');
+  if (intro) intro.textContent = 'Compare quanto cada combustível custa por quilômetro. Nada muda nos seus cálculos até você confirmar.';
+
+  setFieldCopy(
+    document.getElementById('compareGasPrice'),
+    'Quanto custa 1 litro de gasolina?',
+    'Use o preço atual do posto onde você costuma abastecer.',
+  );
+  setFieldCopy(
+    document.getElementById('compareGasEff'),
+    'Quantos km faz com 1 litro de gasolina?',
+    'Exemplo: se o veículo faz 10 km por litro, informe 10.',
+  );
+  setFieldCopy(
+    document.getElementById('compareGnvPrice'),
+    'Quanto custa 1 m³ de GNV?',
+    'Use o preço atual do posto onde você costuma abastecer.',
+  );
+  setFieldCopy(
+    document.getElementById('compareGnvEff'),
+    'Quantos km faz com 1 m³ de GNV?',
+    'Exemplo: se o veículo faz 13 km por m³, informe 13.',
+  );
+
+  const chartTitle = document.getElementById('chartTitle');
+  if (chartTitle) chartTitle.textContent = chartTitle.textContent.replace('Projeção', 'Estimativa');
+  setPreviousText(document.getElementById('gasCostKm'), 'Custo da gasolina por km');
+  setPreviousText(document.getElementById('gnvCostKm'), 'Custo do GNV por km');
+  setPreviousText(document.getElementById('projectedSaving'), 'Economia estimada');
+
+  const gasButton = document.getElementById('applyGasButton');
+  const gnvButton = document.getElementById('applyGnvButton');
+  if (gasButton) gasButton.textContent = 'USAR GASOLINA NOS CÁLCULOS';
+  if (gnvButton) gnvButton.textContent = 'USAR GNV NOS CÁLCULOS';
+}
+
+function applyReportCopy() {
+  const sheet = document.getElementById('reportSheet');
+  if (!sheet) return;
+  const replacements = [
+    ['Meta líquida', 'Quanto você quer que sobre'],
+    ['Líquido realizado', 'Quanto já sobrou'],
+    ['Faturamento', 'Total recebido antes dos custos'],
+    ['Receita média/km', 'Média recebida por km'],
+    ['Projeção mensal', 'Estimativa para o fim do mês'],
+    ['Custos configurados', 'Contas e dinheiro reservado'],
+    ['Dias registrados', 'Dias de trabalho registrados'],
+    ['<th>Bruto</th>', '<th>Total recebido</th>'],
+    ['<th>Líquido</th>', '<th>Quanto sobrou</th>'],
+    ['Semana atual: meta', 'Semana atual: deveria sobrar'],
+    ['· realizado', '· já sobrou'],
+  ];
+  let html = sheet.innerHTML;
+  replacements.forEach(([from, to]) => { html = html.replaceAll(from, to); });
+  sheet.innerHTML = html;
 }
 
 function glossaryMarkup() {
@@ -346,6 +411,32 @@ function patchApp() {
       return result;
     };
   }
+
+  if (typeof app.renderCompare === 'function') {
+    const originalRenderCompare = app.renderCompare;
+    app.renderCompare = function didacticRenderCompare(...args) {
+      const result = originalRenderCompare.apply(this, args);
+      applyCompareCopy();
+      return result;
+    };
+  }
+
+  if (typeof app.printReport === 'function') {
+    const originalPrintReport = app.printReport;
+    app.printReport = function didacticPrintReport(...args) {
+      const nativePrint = window.print;
+      let printRequested = false;
+      window.print = () => { printRequested = true; };
+      try {
+        const result = originalPrintReport.apply(this, args);
+        applyReportCopy();
+        if (printRequested) nativePrint.call(window);
+        return result;
+      } finally {
+        window.print = nativePrint;
+      }
+    };
+  }
 }
 
 function applyAll() {
@@ -354,6 +445,7 @@ function applyAll() {
   applySettingsCopy();
   applyOnboardingCopy();
   applyCostModalCopy();
+  applyCompareCopy();
   applyLearningCopy();
   ensureGlossary();
   document.documentElement.dataset.vettaDidacticLanguage = 'ready';
