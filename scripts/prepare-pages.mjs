@@ -41,8 +41,7 @@ for (const file of rootFiles) {
 
 await mkdir(path.join(output, 'src', 'pwa'), { recursive: true });
 await cp('src/pwa/install-gate-core.js', path.join(output, 'src', 'pwa', 'install-gate-core.js'));
-await mkdir(path.join(output, 'src', 'ui'), { recursive: true });
-await cp('src/ui/didactic-language-core.js', path.join(output, 'src', 'ui', 'didactic-language-core.js'));
+await cp('src/ui', path.join(output, 'src', 'ui'), { recursive: true });
 await mkdir(path.join(output, 'src', 'onboarding'), { recursive: true });
 await cp('src/onboarding/onboarding-core.js', path.join(output, 'src', 'onboarding', 'onboarding-core.js'));
 await cp('src/domain', path.join(output, 'src', 'domain'), { recursive: true });
