@@ -98,7 +98,14 @@ test('visão geral preserva a identidade visual original aprovada', async ({ pag
 
   const visibleTabs = page.locator('.vetta-original-nav .nav-item:visible');
   await expect(visibleTabs).toHaveCount(3);
-  expect(await visibleTabs.allTextContents()).toEqual(['Visão geral', 'Comparar', 'Ajustes']);
+  const tabsInVisualOrder = await visibleTabs.evaluateAll(buttons => buttons
+    .map(button => ({
+      text: button.textContent.trim(),
+      left: button.getBoundingClientRect().left,
+    }))
+    .sort((a, b) => a.left - b.left)
+    .map(item => item.text));
+  expect(tabsInVisualOrder).toEqual(['Visão geral', 'Comparar', 'Ajustes']);
 });
 
 test('estabilização visual mantém acesso ao registro diário e ao histórico', async ({ page }) => {
