@@ -17,15 +17,17 @@ const installedState = {
   closings: [],
 };
 
-async function emulateIphone(page, browserToken = 'Version/18.0') {
-  await page.addInitScript(token => {
+async function emulateIphone(page, browserToken = 'Version/18.0', reducedIdentity = false) {
+  await page.addInitScript(({ token, reduced }) => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
-      get: () => `Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 ${token} Mobile/15E148 Safari/604.1`,
+      get: () => reduced
+        ? `Mozilla/5.0 AppleWebKit/605.1.15 ${token} Mobile/15E148 Safari/604.1`
+        : `Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 ${token} Mobile/15E148 Safari/604.1`,
     });
-    Object.defineProperty(navigator, 'platform', { configurable: true, get: () => 'iPhone' });
-    Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, get: () => 5 });
-  }, browserToken);
+    Object.defineProperty(navigator, 'platform', { configurable: true, get: () => reduced ? '' : 'iPhone' });
+    Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, get: () => reduced ? 0 : 5 });
+  }, { token: browserToken, reduced: reducedIdentity });
 }
 
 async function openInstalled(page, state = installedState) {
@@ -74,14 +76,16 @@ test('mostra no Safari do iPhone o fluxo aprovado de instalação como aplicativ
   await expect(gate).not.toContainText(/PWA|offline|navegador|\baba\b/i);
 });
 
-test('oferece fallback curto quando o iPhone não está no Safari', async ({ page }) => {
-  await emulateIphone(page, 'CriOS/140.0');
+test('Chrome no iPhone recebe o fluxo de Compartilhar, mesmo com identificação reduzida', async ({ page }) => {
+  await emulateIphone(page, 'CriOS/151.0', true);
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 
   const gate = page.locator('#vettaPwaInstallGate');
   await expect(gate).toContainText('Instale o VETTA no seu iPhone');
-  await expect(gate).toContainText('Se a opção não aparecer, abra esta página no Safari.');
-  await expect(page.locator('#vettaPwaGateAction')).toHaveText('Copiar endereço para abrir no Safari');
+  await expect(gate).toContainText('No Chrome, use o botão Compartilhar ao lado da barra de endereço:');
+  await expect(gate).toContainText('Toque em Compartilhar.');
+  await expect(gate).not.toContainText('Toque no menu ⋮.');
+  await expect(page.locator('#vettaPwaGateAction')).toHaveCount(0);
 });
 
 test('configurações mostram perguntas, unidades, exemplos e glossário', async ({ page }) => {
