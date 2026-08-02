@@ -1,5 +1,4 @@
 import {
-  INSTALL_PLATFORMS,
   detectInstallPlatform,
   detectIosBrowser,
   installInstructions,
@@ -88,11 +87,11 @@ function updateStatus(message, tone = 'neutral') {
   status.classList.remove('hidden');
 }
 
-function copyCurrentUrl() {
-  const url = window.location.href.split('#')[0];
-  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(url);
+function copyCurrentAddress() {
+  const address = window.location.href.split('#')[0];
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(address);
   const textarea = document.createElement('textarea');
-  textarea.value = url;
+  textarea.value = address;
   textarea.setAttribute('readonly', '');
   textarea.style.position = 'fixed';
   textarea.style.opacity = '0';
@@ -112,37 +111,39 @@ function renderGate() {
     iosBrowser: gateState.iosBrowser,
     promptAvailable: availablePrompt,
   });
+  const outcome = copy.outcome
+    ? `<p class="pwa-gate-outcome">${copy.outcome}</p>`
+    : '';
+  const benefits = copy.benefits
+    .map(item => `<div><i class="fa-solid ${item.icon}"></i><span>${item.label}</span></div>`)
+    .join('');
   const actionButton = copy.actionLabel
     ? `<button id="vettaPwaGateAction" class="pwa-gate-primary" type="button">${copy.actionLabel}</button>`
     : '';
 
   gate.innerHTML = `
-    <section class="pwa-gate-card" role="dialog" aria-modal="true" aria-labelledby="vettaPwaGateTitle" aria-describedby="vettaPwaGateDescription">
+    <section class="pwa-gate-card" data-platform="${gateState.platform}" role="dialog" aria-modal="true" aria-labelledby="vettaPwaGateTitle" aria-describedby="vettaPwaGateDescription" tabindex="-1">
       <div class="pwa-gate-brand" aria-hidden="true">V</div>
       <span class="pwa-gate-eyebrow">${copy.eyebrow}</span>
       <h1 id="vettaPwaGateTitle">${copy.title}</h1>
       <p id="vettaPwaGateDescription" class="pwa-gate-description">${copy.description}</p>
-      <div class="pwa-gate-benefits">
-        <div><i class="fa-solid fa-mobile-screen-button"></i><span>Acesso pela Tela de Início</span></div>
-        <div><i class="fa-solid fa-bolt"></i><span>Abre direto no VETTA</span></div>
-        <div><i class="fa-solid fa-check"></i><span>Você instala uma única vez</span></div>
-      </div>
+      ${outcome}
+      <div class="pwa-gate-benefits">${benefits}</div>
       <div class="pwa-gate-instructions">
         <strong>${copy.browserHint}</strong>
         <ol>${copy.steps.map(step => `<li>${step}</li>`).join('')}</ol>
       </div>
       <p id="vettaPwaGateStatus" class="pwa-gate-status hidden" role="status" aria-live="polite"></p>
       ${actionButton}
-      <button id="vettaPwaGateCheck" class="pwa-gate-secondary" type="button">Já instalei</button>
-      <p class="pwa-gate-footnote">Depois de instalar, abra o VETTA pelo novo ícone.</p>
+      <p class="pwa-gate-important"><strong>Importante:</strong> ${copy.important}</p>
     </section>`;
 
   const primaryButton = document.getElementById('vettaPwaGateAction');
   primaryButton?.addEventListener('click', async () => {
-    if (copy.action === 'copy-link') {
+    if (copy.action === 'copy-address') {
       try {
-        await copyCurrentUrl();
-        updateStatus('Link copiado. Abra no Safari e siga os passos mostrados acima.', 'success');
+        await copyCurrentAddress();
+        updateStatus('Endereço copiado. Abra o Safari, cole o endereço e siga os passos acima.', 'success');
       } catch {
         updateStatus('Não foi possível copiar. Use Compartilhar e toque em “Copiar”.', 'warning');
       }
@@ -151,7 +152,8 @@ function renderGate() {
 
     const event = promptEvent || window.__vettaApp?.deferredPrompt;
     if (!event) {
-      updateStatus('Abra o menu ⋮ e toque em “Instalar app” ou “Adicionar à tela inicial”.', 'warning');
+      renderGate();
+      updateStatus('Siga os passos mostrados acima para instalar o VETTA.', 'warning');
       return;
     }
 
@@ -161,37 +163,33 @@ function renderGate() {
       promptEvent = null;
       if (window.__vettaApp) window.__vettaApp.deferredPrompt = null;
       if (choice?.outcome === 'accepted') {
-        updateStatus('Instalação iniciada. Quando o ícone aparecer, abra o VETTA por ele.', 'success');
+        renderInstalledSuccess();
       } else {
+        renderGate();
         updateStatus('Instalação cancelada. Para continuar, instale o VETTA.', 'warning');
       }
-      renderGate();
     } catch {
-      updateStatus('Não foi possível abrir a instalação. Use o menu ⋮ e toque em “Instalar app”.', 'warning');
+      promptEvent = null;
+      if (window.__vettaApp) window.__vettaApp.deferredPrompt = null;
+      renderGate();
+      updateStatus('Não foi possível abrir a instalação. Siga os passos mostrados acima.', 'warning');
     }
   });
 
-  document.getElementById('vettaPwaGateCheck')?.addEventListener('click', () => {
-    if (isStandaloneEnvironment({ matchMedia: window.matchMedia.bind(window), navigatorLike: navigator })) {
-      window.location.reload();
-      return;
-    }
-    updateStatus('Feche esta tela e abra o VETTA pelo ícone da Tela de Início.', 'neutral');
-  });
-
-  (primaryButton || document.getElementById('vettaPwaGateCheck'))?.focus({ preventScroll: true });
+  (primaryButton || gate.querySelector('.pwa-gate-card'))?.focus({ preventScroll: true });
 }
 
 function renderInstalledSuccess() {
   const gate = document.getElementById(GATE_ID);
   if (!gate) return;
   gate.innerHTML = `
-    <section class="pwa-gate-card pwa-gate-success" role="dialog" aria-modal="true">
+    <section class="pwa-gate-card pwa-gate-success" role="dialog" aria-modal="true" tabindex="-1">
       <div class="pwa-gate-success-icon"><i class="fa-solid fa-check"></i></div>
-      <span class="pwa-gate-eyebrow">Pronto</span>
+      <span class="pwa-gate-eyebrow">Instalação concluída</span>
       <h1>Abra o VETTA pelo novo ícone</h1>
-      <p class="pwa-gate-description">O VETTA já foi instalado. Feche esta tela, volte à Tela de Início e toque no ícone do VETTA.</p>
+      <p class="pwa-gate-description">Feche esta tela, volte à Tela de Início e toque no ícone do VETTA.</p>
     </section>`;
+  gate.querySelector('.pwa-gate-card')?.focus({ preventScroll: true });
 }
 
 function initializeGate() {
