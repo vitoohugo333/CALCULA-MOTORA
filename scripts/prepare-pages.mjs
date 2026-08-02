@@ -59,12 +59,7 @@ const stylesheets = [
   '<link href="./onboarding-experience.css?v=phase-3" rel="stylesheet">',
   '<link href="./pwa-install-gate.css?v=exp-1" rel="stylesheet">',
 ].join('');
-const scripts = [
-  '<script type="module" src="./didactic-language.js?v=phase-2"></script>',
-  '<script type="module" src="./onboarding-experience.js?v=phase-3"></script>',
-  '<script type="module" src="./src/vite/main.js?v=phase-4"></script>',
-  '<script type="module" src="./pwa-install-gate.js?v=exp-1"></script>',
-].join('');
+const viteEntry = '<script type="module" src="./src/vite/main.js?v=phase-4"></script>';
 const sourceMeta = [
   `<meta name="vetta-dev-branch" content="${escapeHtml(branch)}">`,
   `<meta name="vetta-dev-sha" content="${escapeHtml(sha)}">`,
@@ -74,14 +69,18 @@ const sourceBadge = `<aside id="vettaDevSource" aria-label="Versão publicada pa
 const developmentHtml = sourceHtml
   .replace('<link rel="apple-touch-icon" href="./icon.svg">', '<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">')
   .replace('</head>', `${stylesheets}${sourceMeta}</head>`)
-  .replace('</body>', `${sourceBadge}${scripts}</body>`);
+  .replace('</body>', `${sourceBadge}${viteEntry}</body>`);
 
-if (!developmentHtml.includes('didactic-language.js')
-  || !developmentHtml.includes('onboarding-experience.js')
-  || !developmentHtml.includes('src/vite/main.js')
-  || !developmentHtml.includes('pwa-install-gate.js')
-  || !developmentHtml.includes('vettaDevSource')) {
-  throw new Error('Fases de linguagem, onboarding, Vite, instalação ou identificação da branch não foram injetadas no GitHub Pages.');
+const directExperienceEntries = [
+  '<script type="module" src="./didactic-language.js',
+  '<script type="module" src="./onboarding-experience.js',
+  '<script type="module" src="./pwa-install-gate.js',
+];
+if (!developmentHtml.includes('src/vite/main.js') || !developmentHtml.includes('vettaDevSource')) {
+  throw new Error('A entrada única do Vite ou a identificação da branch não foi injetada no GitHub Pages.');
+}
+if (directExperienceEntries.some(entry => developmentHtml.includes(entry))) {
+  throw new Error('Módulos de experiência foram injetados diretamente; a ordem deve ser controlada pela entrada única do Vite.');
 }
 
 const buildInfo = {
