@@ -40,58 +40,85 @@ export function shouldLockApplication({ installed, testMode } = {}) {
   return installed !== true;
 }
 
+const standardBenefits = Object.freeze([
+  Object.freeze({ icon: 'fa-download', label: 'Instala o aplicativo' }),
+  Object.freeze({ icon: 'fa-mobile-screen-button', label: 'Ícone próprio na Tela de Início' }),
+  Object.freeze({ icon: 'fa-check', label: 'Você só precisa instalar uma vez' }),
+]);
+
 export function installInstructions({ platform, iosBrowser = 'not-ios', promptAvailable = false } = {}) {
   if (platform === INSTALL_PLATFORMS.IOS) {
     const isSafari = iosBrowser === 'safari-ios';
     return Object.freeze({
-      eyebrow: 'Instalação rápida',
-      title: 'Instale o VETTA para continuar',
-      description: 'Coloque o VETTA na Tela de Início do seu iPhone. Você só precisa fazer isso uma vez.',
+      eyebrow: 'Instalação no iPhone',
+      title: 'Instale o VETTA no seu iPhone',
+      description: 'No iPhone, a instalação é feita pela opção “Adicionar à Tela de Início”.',
+      outcome: 'Depois disso, o VETTA criará um ícone próprio e funcionará normalmente, como qualquer aplicativo.',
+      benefits: standardBenefits,
       browserHint: isSafari
-        ? 'Siga os passos abaixo:'
-        : 'Se “Adicionar à Tela de Início” não aparecer, abra este link no Safari.',
+        ? 'Siga estes passos:'
+        : 'Siga estes passos. Se a opção não aparecer, abra esta página no Safari.',
       steps: Object.freeze([
-        'Toque em Compartilhar — o quadrado com uma seta para cima.',
+        'Toque em Compartilhar.',
         'Toque em “Adicionar à Tela de Início”.',
-        'Toque em “Adicionar”.',
+        'Confirme em “Adicionar”.',
         'Abra o VETTA pelo novo ícone.',
       ]),
-      actionLabel: isSafari ? '' : 'Copiar link para abrir no Safari',
-      action: isSafari ? 'instructions-only' : 'copy-link',
+      actionLabel: isSafari ? '' : 'Copiar endereço para abrir no Safari',
+      action: isSafari ? 'instructions-only' : 'copy-address',
+      important: 'Depois da instalação, feche esta tela e abra o VETTA pelo ícone criado.',
     });
   }
 
   if (platform === INSTALL_PLATFORMS.ANDROID) {
+    const steps = promptAvailable
+      ? [
+          'Toque em “Instalar VETTA”.',
+          'Confirme em “Instalar”.',
+          'Abra o VETTA pelo novo ícone.',
+        ]
+      : [
+          'Toque no menu ⋮.',
+          'Toque em “Instalar app” ou “Adicionar à tela inicial”.',
+          'Confirme a instalação.',
+          'Abra o VETTA pelo novo ícone.',
+        ];
     return Object.freeze({
-      eyebrow: 'Instalação rápida',
+      eyebrow: 'Instalação no celular',
       title: 'Instale o VETTA para continuar',
-      description: 'Instale o VETTA no seu celular para continuar. Você só precisa fazer isso uma vez.',
-      browserHint: promptAvailable
-        ? 'Toque no botão abaixo.'
-        : 'Abra o menu ⋮ e toque em “Instalar app” ou “Adicionar à tela inicial”.',
-      steps: Object.freeze([
-        'Toque em “Instalar VETTA”.',
-        'Confirme a instalação.',
-        'Abra o VETTA pelo novo ícone.',
-      ]),
-      actionLabel: promptAvailable ? 'Instalar VETTA' : 'Ver como instalar',
-      action: promptAvailable ? 'prompt' : 'manual',
+      description: 'Instale o VETTA no seu celular para continuar.',
+      outcome: 'Depois disso, ele terá um ícone próprio na sua Tela de Início.',
+      benefits: standardBenefits,
+      browserHint: promptAvailable ? 'Toque no botão abaixo:' : 'Siga estes passos:',
+      steps: Object.freeze(steps),
+      actionLabel: promptAvailable ? 'Instalar VETTA' : '',
+      action: promptAvailable ? 'prompt' : 'instructions-only',
+      important: 'Depois de instalar, abra o VETTA pelo novo ícone.',
     });
   }
 
+  const steps = promptAvailable
+    ? [
+        'Clique em “Instalar VETTA”.',
+        'Confirme a instalação.',
+        'Abra o VETTA pelo novo ícone.',
+      ]
+    : [
+        'Abra o menu ⋮.',
+        'Escolha “Instalar VETTA” ou “Instalar app”.',
+        'Confirme a instalação.',
+        'Abra o VETTA pelo novo ícone.',
+      ];
   return Object.freeze({
-    eyebrow: 'Instalação rápida',
+    eyebrow: 'Instalação',
     title: 'Instale o VETTA para continuar',
-    description: 'Instale o VETTA neste dispositivo. Você só precisa fazer isso uma vez.',
-    browserHint: promptAvailable
-      ? 'Clique no botão abaixo.'
-      : 'Abra o menu ⋮ e escolha “Instalar VETTA” ou “Instalar app”.',
-    steps: Object.freeze([
-      'Clique em “Instalar VETTA”.',
-      'Confirme a instalação.',
-      'Abra o VETTA pelo novo ícone.',
-    ]),
-    actionLabel: promptAvailable ? 'Instalar VETTA' : 'Ver como instalar',
-    action: promptAvailable ? 'prompt' : 'manual',
+    description: 'Instale o VETTA neste dispositivo para continuar.',
+    outcome: 'Depois disso, ele ficará disponível por um ícone próprio.',
+    benefits: standardBenefits,
+    browserHint: promptAvailable ? 'Clique no botão abaixo:' : 'Siga estes passos:',
+    steps: Object.freeze(steps),
+    actionLabel: promptAvailable ? 'Instalar VETTA' : '',
+    action: promptAvailable ? 'prompt' : 'instructions-only',
+    important: 'Depois de instalar, abra o VETTA pelo novo ícone.',
   });
 }
