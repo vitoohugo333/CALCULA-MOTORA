@@ -3,21 +3,17 @@ name: Verify Development Experience
 on:
   pull_request:
     paths:
-      - 'src/pwa/**'
-      - 'src/ui/**'
-      - 'src/onboarding/**'
+      - 'src/**'
       - 'pwa-install-gate.js'
       - 'pwa-install-gate.css'
       - 'didactic-language.js'
       - 'didactic-language.css'
       - 'onboarding-experience.js'
       - 'onboarding-experience.css'
-      - 'scripts/prepare-pages.mjs'
-      - 'tests/pwa-install-gate.test.mjs'
-      - 'tests/didactic-language.test.mjs'
-      - 'tests/onboarding-core.test.mjs'
-      - 'tests/pages-e2e/**'
+      - 'scripts/**'
+      - 'tests/**'
       - 'playwright.pages.config.js'
+      - 'vite.config.js'
       - 'manifest.webmanifest'
       - 'icon-192.png'
       - 'icon-512.png'
@@ -60,11 +56,17 @@ jobs:
       - name: Verify persistent onboarding
         run: npm run check:onboarding
 
-      - name: Prepare GitHub Pages artifact
-        run: npm run prepare:pages
+      - name: Verify Vite modules
+        run: npm run check:vite
+
+      - name: Build Vite dist
+        run: npm run build
+
+      - name: Verify Vite dist
+        run: npm run verify:vite-build
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Test installation, language and onboarding flows
+      - name: Test all flows against Vite dist
         run: npm run test:pages-e2e
