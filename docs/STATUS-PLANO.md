@@ -31,14 +31,6 @@ Entregas concluídas:
 - linguagem didática no onboarding, registro diário, configurações, simulador e relatório;
 - módulo de linguagem separado do gate de instalação.
 
-Evidência automatizada:
-
-- 5 testes da fundação modular;
-- 7 testes da instalação obrigatória;
-- 6 testes unitários do contrato de linguagem;
-- 8 cenários de navegador cobrindo instalação, onboarding, configuração, erros, simulador, relatório e preservação de dados;
-- publicação automática na branch `gh-pages`.
-
 Validação humana ainda necessária:
 
 - observar um motorista novo preenchendo a configuração sem orientação verbal;
@@ -52,7 +44,6 @@ Validação humana ainda necessária:
 
 Entregas concluídas:
 
-- auditoria do fluxo anterior antes das alterações;
 - rascunho separado do estado financeiro oficial;
 - progresso salvo automaticamente no aparelho;
 - retomada no passo e nos valores exatos após fechar ou recarregar;
@@ -63,19 +54,7 @@ Entregas concluídas:
 - preservação de registros, eventos, fechamentos e custos criados pelo motorista;
 - substituição apenas dos custos gerados pelo próprio onboarding;
 - confirmação da primeira meta;
-- orientação direta para registrar o primeiro dia;
-- correção do contrato de rótulos para preservar elementos internos usados pelo aplicativo.
-
-Evidência automatizada:
-
-- 6 testes unitários do núcleo do onboarding;
-- 12 cenários finais de navegador somando instalação, linguagem e onboarding;
-- teste direto de retomada após recarregar;
-- teste de preservação de registros, eventos, fechamentos e custos do usuário;
-- teste de campos opcionais e primeira ação;
-- workflow de verificação aprovado;
-- publicação automática em `gh-pages` aprovada;
-- `dev-build.json` confirmou branch, PR e SHA publicados.
+- orientação direta para registrar o primeiro dia.
 
 Validação humana ainda necessária:
 
@@ -83,15 +62,48 @@ Validação humana ainda necessária:
 - verificar se a primeira ação é compreendida sem orientação verbal;
 - observar se o cartão de retomada é percebido com facilidade.
 
-## Próxima fase — Fase 4: Consolidação Vite
+## Fase 4 — Consolidação Vite
 
-Escopo definido no plano:
+**Status:** em andamento no PR #20. Primeiro corte vertical concluído e publicado.
 
-- domínio financeiro modular;
-- armazenamento desacoplado;
-- telas por módulo;
-- build `dist`;
-- paridade funcional;
-- remoção gradual do legado.
+**Commit publicado:** `914d9fa9241289ee5dc785204a7d31c8644fe390`
 
-A Fase 4 deve começar por caracterização do comportamento atual, definição das fronteiras do domínio e introdução de um build Vite sem remover a entrada legada até existir paridade comprovada.
+Entregas concluídas neste corte:
+
+- Vite configurado com base relativa e saída `dist`;
+- GitHub Pages alterado para publicar o `dist` verificado;
+- entrada única do runtime Vite, carregada depois da aplicação legada;
+- ordem explícita de inicialização para linguagem, onboarding e instalação;
+- domínio financeiro puro extraído para `src/domain/finance`;
+- adaptador de armazenamento desacoplado em `src/storage`;
+- comparação automática entre cálculos modulares e cálculos legados;
+- comparação automática entre estado persistido e estado em memória;
+- preservação de `app.js` como fallback durante a migração;
+- verificador estrutural do artefato `dist`;
+- suíte herdada executada integralmente contra `dist`.
+
+Evidência automatizada do corte:
+
+- 4 testes do domínio financeiro;
+- 4 testes do contrato de armazenamento;
+- checks herdados das fases 1, 2 e 3;
+- build Vite e verificação estrutural do `dist`;
+- gate de instalação aprovado no `dist`;
+- linguagem didática aprovada no `dist`;
+- onboarding persistente aprovado no `dist`;
+- paridade financeira e de armazenamento aprovada em execução;
+- identificação do build e módulos herdados aprovada;
+- publicação de `dist` em `gh-pages` aprovada;
+- `dev-build.json` confirmou `buildSystem: vite`, branch, PR e SHA.
+
+Ainda falta para concluir a Fase 4:
+
+- migrar as telas para módulos reais;
+- fazer os consumidores oficiais usarem o domínio e o armazenamento novos;
+- reduzir progressivamente as responsabilidades de `app.js`;
+- remover o legado somente após paridade e rollback comprovados;
+- executar nova validação visual em aparelhos físicos.
+
+## Próximo corte da Fase 4
+
+Migrar uma tela completa — começando pelo registro diário — para uma fronteira modular que consuma o domínio e o armazenamento novos, mantendo comparação e rollback para o fluxo legado.
