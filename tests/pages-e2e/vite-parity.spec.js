@@ -61,8 +61,16 @@ test('dist preserva todos os fluxos herdados e registra o build Vite', async ({ 
   const response = await page.request.get('./dev-build.json');
   expect(response.ok()).toBe(true);
   const build = await response.json();
+  const source = await page.evaluate(() => ({
+    branch: document.querySelector('meta[name="vetta-dev-branch"]')?.content || '',
+    sha: document.querySelector('meta[name="vetta-dev-sha"]')?.content || '',
+  }));
+
   expect(build.buildSystem).toBe('vite');
-  expect(build.branch).toContain('fase-4-consolidacao-vite');
+  expect(build.branch).toBe(source.branch);
+  expect(build.sha).toBe(source.sha);
+  expect(build.branch).toMatch(/^(feature|fix|refactor)\//);
+  expect(build.sha).toMatch(/^[0-9a-f]{40}$/);
 
   await expect(page.locator('#vettaPwaInstallGate')).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('data-vetta-didactic-language', 'ready');
