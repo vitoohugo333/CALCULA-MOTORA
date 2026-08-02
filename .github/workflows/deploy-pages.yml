@@ -1,11 +1,8 @@
-name: Deploy VETTA Development to GitHub Pages
+name: Deploy Active Development Branch to GitHub Pages
 
 on:
-  push:
-    branches:
-      - 'feature/**'
-      - 'refactor/**'
-      - develop
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
@@ -19,13 +16,30 @@ concurrency:
 
 jobs:
   deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.head_ref, 'feature/') ||
+      startsWith(github.head_ref, 'refactor/') ||
+      github.head_ref == 'develop'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      VETTA_DEV_BRANCH: ${{ github.head_ref || github.ref_name }}
+      VETTA_DEV_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VETTA_DEV_PR: ${{ github.event.pull_request.number || 'manual' }}
     steps:
-      - name: Checkout
+      - name: Checkout exact working branch commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Confirm deployment source
+        run: |
+          test "$(git rev-parse HEAD)" = "$VETTA_DEV_SHA"
+          echo "Publishing branch: $VETTA_DEV_BRANCH"
+          echo "Publishing commit: $VETTA_DEV_SHA"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -43,7 +57,7 @@ jobs:
           npm run check:pwa-gate
           node tests/verify-production.mjs
 
-      - name: Prepare GitHub Pages development site
+      - name: Prepare exact GitHub Pages development artifact
         run: npm run prepare:pages
 
       - name: Install Chromium for development flow
@@ -60,6 +74,6 @@ jobs:
         with:
           path: _site
 
-      - name: Deploy development site
+      - name: Deploy exact working branch artifact
         id: deployment
         uses: actions/deploy-pages@v4
