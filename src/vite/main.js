@@ -1,3 +1,4 @@
+import { restoreDashboardVisualContract } from '../ui/dashboard-visual-contract.js';
 import { runLegacyParityChecks } from './parity.js';
 
 function waitForLegacyApp({ timeoutMs = 5000, intervalMs = 20 } = {}) {
@@ -19,10 +20,14 @@ async function initializeViteRuntime() {
     const app = await waitForLegacyApp();
 
     await import('../../didactic-language.js');
+    restoreDashboardVisualContract();
     await import('../../onboarding-experience.js');
     await import('../../pwa-install-gate.js');
 
-    const run = () => runLegacyParityChecks(app);
+    const run = () => {
+      restoreDashboardVisualContract();
+      runLegacyParityChecks(app);
+    };
     run();
 
     if (!app.__vettaViteRenderPatched) {
