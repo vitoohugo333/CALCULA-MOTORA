@@ -28,6 +28,10 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      VETTA_DEV_BRANCH: ${{ github.head_ref || github.ref_name }}
+      VETTA_DEV_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VETTA_DEV_PR: ${{ github.event.pull_request.number || 'manual' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
