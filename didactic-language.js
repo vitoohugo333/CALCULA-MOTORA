@@ -23,7 +23,7 @@ function ensureLabel(input, text, { create = false } = {}) {
   const container = fieldContainer(input);
   if (!container) return null;
   let label = input.id ? container.querySelector(`label[for="${input.id}"]`) : null;
-  if (!label) label = directLabel(container);
+  if (!label && !create) label = directLabel(container);
   if (!label && create) {
     label = document.createElement('label');
     label.className = 'label-micro';
@@ -189,7 +189,7 @@ function applyOnboardingCopy() {
     fuelType: document.getElementById('onboardingFuelType')?.value || 'gasoline',
   });
   setFieldCopy(document.getElementById('onboardingTarget'), copy.targetLabel, copy.targetHelp, { create: true });
-  const daysLabel = document.querySelector('#onboardingStep1 > label');
+  const daysLabel = document.querySelector('#onboardingStep1 > label:not([for="onboardingTarget"])');
   if (daysLabel) daysLabel.textContent = copy.daysLabel;
 
   const fuelIntro = document.querySelector('#onboardingStep2 > p');
