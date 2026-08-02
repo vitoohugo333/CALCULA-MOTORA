@@ -66,7 +66,7 @@ Validação humana ainda necessária:
 
 **Status:** em andamento no PR #20. Primeiro corte vertical concluído e publicado.
 
-**Commit publicado:** `914d9fa9241289ee5dc785204a7d31c8644fe390`
+**Commit funcional do corte, integralmente validado no `dist`:** `6fabd127ee653fe614d1b30e1bd3d4281781491c`
 
 Entregas concluídas neste corte:
 
@@ -90,7 +90,7 @@ Evidência automatizada do corte:
 - build Vite e verificação estrutural do `dist`;
 - gate de instalação aprovado no `dist`;
 - linguagem didática aprovada no `dist`;
-- onboarding persistente aprovado no `dist`;
+- retomada, navegação de volta, campos opcionais e refazer onboarding aprovados separadamente no `dist`;
 - paridade financeira e de armazenamento aprovada em execução;
 - identificação do build e módulos herdados aprovada;
 - publicação de `dist` em `gh-pages` aprovada;
