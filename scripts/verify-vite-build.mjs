@@ -4,6 +4,7 @@ import path from 'node:path';
 const requiredFiles = [
   'index.html',
   'app.js',
+  'styles.css',
   'sw.js',
   'manifest.webmanifest',
   'icon.svg',
@@ -28,6 +29,30 @@ if (indexHtml.includes('./src/vite/main.js')) {
 }
 if (!indexHtml.includes('./app.js')) {
   throw new Error('A entrada legada precisa permanecer no primeiro corte da migração.');
+}
+if (!indexHtml.includes('<link rel="manifest" href="./manifest.webmanifest">')) {
+  throw new Error('O HTML final não referencia o manifesto estável na raiz do aplicativo.');
+}
+if (/href="\.\/assets\/manifest-[^"]+\.webmanifest"/.test(indexHtml)) {
+  throw new Error('O manifesto não pode ser servido dentro de assets/, pois isso quebra scope, start_url e ícones relativos.');
+}
+
+const manifest = JSON.parse(await readFile(path.join('dist', 'manifest.webmanifest'), 'utf8'));
+if (manifest.display !== 'standalone' || manifest.start_url !== './' || manifest.scope !== './') {
+  throw new Error('O manifesto publicado não preserva display standalone, start_url e scope do aplicativo.');
+}
+for (const icon of manifest.icons || []) {
+  if (!String(icon.src || '').startsWith('./')) {
+    throw new Error(`Ícone do manifesto fora do escopo relativo esperado: ${icon.src}`);
+  }
+  await access(path.join('dist', String(icon.src).replace(/^\.\//, '')));
+}
+
+const serviceWorker = await readFile(path.join('dist', 'sw.js'), 'utf8');
+const shellMatches = [...serviceWorker.matchAll(/'\.\/([^']+)'/g)].map(match => match[1].split('?')[0]);
+for (const shellFile of shellMatches) {
+  if (!shellFile || shellFile === '') continue;
+  await access(path.join('dist', shellFile));
 }
 
 const assetsPath = path.join('dist', 'assets');
@@ -70,4 +95,4 @@ if (sourceIndex.includes('src/vite/main.js') || sourceIndex.includes('pwa-instal
   throw new Error('A entrada oficial foi alterada; o experimento deve continuar isolado no build de desenvolvimento.');
 }
 
-console.log(`Vite dist verified with ${javascriptAssets.length} JavaScript bundle(s).`);
+console.log(`Vite dist verified with ${javascriptAssets.length} JavaScript bundle(s) and an installable root manifest.`);
