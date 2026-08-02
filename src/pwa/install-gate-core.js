@@ -42,37 +42,37 @@ export function shouldLockApplication({ installed, testMode } = {}) {
 
 export function installInstructions({ platform, iosBrowser = 'not-ios', promptAvailable = false } = {}) {
   if (platform === INSTALL_PLATFORMS.IOS) {
-    const browserHint = iosBrowser === 'safari-ios'
-      ? 'Você já está no Safari.'
-      : 'Use o menu Compartilhar deste navegador. Se “Adicionar à Tela de Início” não aparecer, abra o link no Safari.';
+    const isSafari = iosBrowser === 'safari-ios';
     return Object.freeze({
-      eyebrow: 'Instalação no iPhone',
-      title: 'Adicione o VETTA à Tela de Início',
-      description: 'No iPhone, a instalação é feita pelo menu Compartilhar. O aplicativo só será liberado quando você abrir pelo ícone criado na Tela de Início.',
-      browserHint,
+      eyebrow: 'Instalação rápida',
+      title: 'Instale o VETTA para continuar',
+      description: 'Coloque o VETTA na Tela de Início do seu iPhone. Você só precisa fazer isso uma vez.',
+      browserHint: isSafari
+        ? 'Siga os passos abaixo:'
+        : 'Se “Adicionar à Tela de Início” não aparecer, abra este link no Safari.',
       steps: Object.freeze([
-        'Toque no botão Compartilhar — o quadrado com uma seta para cima.',
-        'Role a lista e toque em “Adicionar à Tela de Início”.',
-        'Confirme o nome VETTA e toque em “Adicionar”.',
-        'Feche esta aba e abra o VETTA pelo novo ícone da Tela de Início.',
+        'Toque em Compartilhar — o quadrado com uma seta para cima.',
+        'Toque em “Adicionar à Tela de Início”.',
+        'Toque em “Adicionar”.',
+        'Abra o VETTA pelo novo ícone.',
       ]),
-      actionLabel: 'Copiar link do VETTA',
-      action: 'copy-link',
+      actionLabel: isSafari ? '' : 'Copiar link para abrir no Safari',
+      action: isSafari ? 'instructions-only' : 'copy-link',
     });
   }
 
   if (platform === INSTALL_PLATFORMS.ANDROID) {
     return Object.freeze({
-      eyebrow: 'Instalação no Android',
+      eyebrow: 'Instalação rápida',
       title: 'Instale o VETTA para continuar',
-      description: 'A instalação cria um ícone, melhora o funcionamento offline e mantém a experiência separada da aba do navegador.',
+      description: 'Instale o VETTA no seu celular para continuar. Você só precisa fazer isso uma vez.',
       browserHint: promptAvailable
-        ? 'O instalador do navegador está pronto.'
-        : 'Se o instalador não abrir, use o menu ⋮ e procure “Instalar app” ou “Adicionar à tela inicial”.',
+        ? 'Toque no botão abaixo.'
+        : 'Abra o menu ⋮ e toque em “Instalar app” ou “Adicionar à tela inicial”.',
       steps: Object.freeze([
         'Toque em “Instalar VETTA”.',
-        'Confirme a instalação no navegador.',
-        'Depois, abra o VETTA pelo ícone criado na tela inicial.',
+        'Confirme a instalação.',
+        'Abra o VETTA pelo novo ícone.',
       ]),
       actionLabel: promptAvailable ? 'Instalar VETTA' : 'Ver como instalar',
       action: promptAvailable ? 'prompt' : 'manual',
@@ -80,16 +80,16 @@ export function installInstructions({ platform, iosBrowser = 'not-ios', promptAv
   }
 
   return Object.freeze({
-    eyebrow: 'Aplicativo instalável',
+    eyebrow: 'Instalação rápida',
     title: 'Instale o VETTA para continuar',
-    description: 'Abra o VETTA como aplicativo para liberar os recursos. Em navegadores compatíveis, a instalação aparece na barra de endereço ou no menu.',
+    description: 'Instale o VETTA neste dispositivo. Você só precisa fazer isso uma vez.',
     browserHint: promptAvailable
-      ? 'O instalador do navegador está pronto.'
-      : 'Use Chrome ou Edge e procure “Instalar VETTA” no menu do navegador.',
+      ? 'Clique no botão abaixo.'
+      : 'Abra o menu ⋮ e escolha “Instalar VETTA” ou “Instalar app”.',
     steps: Object.freeze([
       'Clique em “Instalar VETTA”.',
-      'Confirme no navegador.',
-      'Abra o aplicativo pelo atalho instalado.',
+      'Confirme a instalação.',
+      'Abra o VETTA pelo novo ícone.',
     ]),
     actionLabel: promptAvailable ? 'Instalar VETTA' : 'Ver como instalar',
     action: promptAvailable ? 'prompt' : 'manual',
