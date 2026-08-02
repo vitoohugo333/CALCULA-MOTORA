@@ -72,8 +72,11 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Test installation and didactic flows against Vite dist
-        run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/pwa-install-gate.spec.js
+      - name: Test installation gate against Vite dist
+        run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/pwa-install-gate.spec.js --grep "bloqueia|Safari do iPhone|fallback curto"
+
+      - name: Test didactic flows against Vite dist
+        run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/pwa-install-gate.spec.js --grep "configurações|registro diário|novo usuário|simulador|modo instalado"
 
       - name: Test onboarding flows against Vite dist
         run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/onboarding-experience.spec.js
