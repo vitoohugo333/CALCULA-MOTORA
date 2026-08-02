@@ -9,21 +9,9 @@ export const PRODUCT_GLOSSARY = Object.freeze([
   Object.freeze({ term: 'Quanto você recebe por km', meaning: 'Média calculada dividindo o total recebido pelos quilômetros rodados.' }),
 ]);
 
+// O dashboard é uma superfície visual estabilizada. Esta lista deve conter
+// apenas elementos de jornadas explicativas, nunca KPIs ou cartões da visão geral.
 export const STATIC_TEXT_REPLACEMENTS = Object.freeze([
-  Object.freeze({ selector: '#kpiGrossDaily', relation: 'label', text: 'Quanto precisa receber por dia' }),
-  Object.freeze({ selector: '#kpiNetDaily', relation: 'label', text: 'Quanto deve sobrar por dia' }),
-  Object.freeze({ selector: '#targetProfitDisplay', relation: 'label', text: 'Quanto você quer que sobre no mês' }),
-  Object.freeze({ selector: '#actualNet', relation: 'label', text: 'Quanto já sobrou' }),
-  Object.freeze({ selector: '#projectedNet', relation: 'label', text: 'Estimativa para o fim do mês' }),
-  Object.freeze({ selector: '#weekTarget', relation: 'label', text: 'Quanto deve sobrar' }),
-  Object.freeze({ selector: '#weekActual', relation: 'label', text: 'Quanto já sobrou' }),
-  Object.freeze({ selector: '#weekRevenueKm', relation: 'label', text: 'Recebido por km' }),
-  Object.freeze({ selector: '#dreGross', relation: 'previous', text: 'Total necessário antes dos custos' }),
-  Object.freeze({ selector: '#dreKm', relation: 'previous', text: 'Quilômetros estimados no mês' }),
-  Object.freeze({ selector: '#dreVariable', relation: 'previous', text: 'Gastos que aumentam quando você roda' }),
-  Object.freeze({ selector: '#drePercent', relation: 'previous', text: 'Taxas sobre o que você recebe' }),
-  Object.freeze({ selector: '#dreFixed', relation: 'previous', text: 'Contas e dinheiro reservado' }),
-  Object.freeze({ selector: '#dreNet', relation: 'previous', text: 'Quanto você quer que sobre' }),
   Object.freeze({ selector: '#recordGross', relation: 'label', text: 'Quanto você recebeu no dia?' }),
   Object.freeze({ selector: '#recordKm', relation: 'label', text: 'Quantos quilômetros você rodou?' }),
   Object.freeze({ selector: '#recordHours', relation: 'label', text: 'Quantas horas ficou online? (opcional)' }),
@@ -34,7 +22,6 @@ export const STATIC_TEXT_REPLACEMENTS = Object.freeze([
   Object.freeze({ selector: '#previewDelta', relation: 'label', text: 'Diferença para a meta' }),
   Object.freeze({ selector: '#historyRevenueKm', relation: 'label', text: 'Média recebida por km' }),
   Object.freeze({ selector: '#historyNet', relation: 'label', text: 'Total que sobrou' }),
-  Object.freeze({ selector: '#extraDaysOffBadge', relation: 'label', text: 'Folgas além das habituais' }),
 ]);
 
 export function readableFuelUnit(unit, label = '') {
