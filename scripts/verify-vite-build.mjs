@@ -29,9 +29,6 @@ if (indexHtml.includes('./src/vite/main.js')) {
 if (!indexHtml.includes('./app.js')) {
   throw new Error('A entrada legada precisa permanecer no primeiro corte da migração.');
 }
-if (!indexHtml.includes('pwa-install-gate')) {
-  throw new Error('O gate de instalação não foi preservado no artefato Vite.');
-}
 
 const assetsPath = path.join('dist', 'assets');
 const assets = await readdir(assetsPath);
@@ -39,9 +36,25 @@ const javascriptAssets = assets.filter(file => file.endsWith('.js'));
 if (!javascriptAssets.length) {
   throw new Error('Nenhum bundle JavaScript foi gerado pelo Vite.');
 }
+
+let bundledJavascript = '';
 for (const file of javascriptAssets) {
-  const info = await stat(path.join(assetsPath, file));
+  const assetPath = path.join(assetsPath, file);
+  const info = await stat(assetPath);
   if (info.size <= 0) throw new Error(`Bundle vazio: ${file}`);
+  bundledJavascript += await readFile(assetPath, 'utf8');
+}
+
+const requiredBundleMarkers = [
+  'vettaPwaInstallGate',
+  'vettaDidacticLanguage',
+  'vettaOnboardingExperience',
+  'vettaViteParity',
+];
+for (const marker of requiredBundleMarkers) {
+  if (!bundledJavascript.includes(marker)) {
+    throw new Error(`O bundle Vite não contém o módulo esperado: ${marker}`);
+  }
 }
 
 const buildInfo = JSON.parse(await readFile(path.join('dist', 'dev-build.json'), 'utf8'));
