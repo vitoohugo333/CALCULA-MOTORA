@@ -27,7 +27,7 @@ async function openInstalled(page) {
 
   await page.addInitScript(({ key, state }) => {
     window.__VETTA_PWA_TEST_MODE__ = 'installed';
-    localStorage.setItem(key, JSON.stringify(state));
+    if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(state));
   }, { key: STORAGE_KEY, state: installedState });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/', { waitUntil: 'networkidle' });
