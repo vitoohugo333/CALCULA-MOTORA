@@ -1,0 +1,253 @@
+.pwa-install-required {
+  overflow: hidden !important;
+}
+
+.pwa-gate-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: grid;
+  place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+  overflow: auto;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.28), transparent 34%),
+    linear-gradient(160deg, #07101f 0%, #0b1121 55%, #111d36 100%);
+  color: #0b1121;
+}
+
+.pwa-gate-card {
+  width: min(100%, 480px);
+  margin: auto;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.45);
+}
+
+.pwa-gate-card:focus {
+  outline: none;
+}
+
+.pwa-gate-brand {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 20px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #0b1121, #2563eb);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 900;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.24);
+}
+
+.pwa-gate-eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pwa-gate-card h1 {
+  margin: 0;
+  font-size: clamp(27px, 8vw, 38px);
+  font-weight: 900;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+}
+
+.pwa-gate-description,
+.pwa-gate-outcome {
+  color: #526079;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.pwa-gate-description {
+  margin-top: 14px;
+}
+
+.pwa-gate-outcome {
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+.pwa-gate-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.pwa-gate-benefits div {
+  display: flex;
+  min-height: 86px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 8px;
+  border-radius: 18px;
+  background: #f1f5f9;
+  color: #475569;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.pwa-gate-benefits i {
+  color: #2563eb;
+  font-size: 18px;
+}
+
+.pwa-gate-instructions {
+  margin-top: 18px;
+  padding: 17px;
+  border-radius: 20px;
+  background: #eff6ff;
+  color: #334155;
+}
+
+.pwa-gate-instructions strong {
+  display: block;
+  color: #1d4ed8;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pwa-gate-instructions ol {
+  margin: 12px 0 0;
+  padding-left: 20px;
+}
+
+.pwa-gate-instructions li {
+  margin-top: 8px;
+  padding-left: 3px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pwa-gate-status {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.pwa-gate-status.hidden {
+  display: none;
+}
+
+.pwa-gate-status[data-tone='success'] {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.pwa-gate-status[data-tone='warning'] {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.pwa-gate-primary {
+  width: 100%;
+  margin-top: 18px;
+  padding: 16px;
+  border: 0;
+  border-radius: 17px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 15px 30px rgba(37, 99, 235, 0.24);
+}
+
+.pwa-gate-primary:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 3px;
+}
+
+.pwa-gate-important {
+  margin: 15px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.pwa-gate-success {
+  text-align: center;
+}
+
+.pwa-gate-success .pwa-gate-eyebrow {
+  margin-top: 18px;
+}
+
+.pwa-gate-success-icon {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 28px;
+}
+
+.vetta-field-help {
+  max-width: 46ch;
+}
+
+@media (max-width: 390px) {
+  .pwa-gate-card {
+    padding: 23px;
+    border-radius: 25px;
+  }
+
+  .pwa-gate-benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .pwa-gate-benefits div {
+    min-height: auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 12px 14px;
+    text-align: left;
+  }
+
+  .pwa-gate-card h1 {
+    font-size: 29px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pwa-gate-card {
+    animation: pwaGateEnter 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes pwaGateEnter {
+    from {
+      opacity: 0;
+      transform: translateY(18px) scale(0.98);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
