@@ -23,7 +23,7 @@ jobs:
       github.head_ref == 'develop'
     runs-on: ubuntu-latest
     environment:
-      name: github-pages
+      name: github-pages-development
       url: ${{ steps.deployment.outputs.page_url }}
     env:
       VETTA_DEV_BRANCH: ${{ github.head_ref || github.ref_name }}
