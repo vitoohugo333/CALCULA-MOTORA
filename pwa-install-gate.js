@@ -7,68 +7,8 @@ import {
 } from './src/pwa/install-gate-core.js';
 
 const GATE_ID = 'vettaPwaInstallGate';
-const HELP_CLASS = 'vetta-field-help';
 let promptEvent = null;
 let gateState = null;
-
-function fieldFor(input) {
-  const wrapper = input?.closest('.input-wrapper');
-  return wrapper?.parentElement || input?.parentElement || null;
-}
-
-function setFieldCopy(input, labelText, helpText) {
-  const field = fieldFor(input);
-  if (!field) return;
-  const label = field.querySelector('label');
-  if (label) label.textContent = labelText;
-  let help = field.querySelector(`.${HELP_CLASS}`);
-  if (!help) {
-    help = document.createElement('p');
-    help.className = `${HELP_CLASS} text-[11px] text-slate-500 mt-2 leading-relaxed`;
-    field.appendChild(help);
-  }
-  help.textContent = helpText;
-}
-
-function readableFuelUnit(unit) {
-  if (unit === 'L') return 'litro';
-  if (unit === 'm³') return 'm³ de GNV';
-  return unit || 'unidade de combustível';
-}
-
-function applyDidacticCopy() {
-  const app = window.__vettaApp;
-  const fuelInput = document.getElementById('fuelEfficiency');
-  const unit = app?.state?.fuel?.unit || document.getElementById('fuelEfficiencyUnit')?.textContent || 'un.';
-  setFieldCopy(
-    fuelInput,
-    `Quantos quilômetros faz com 1 ${readableFuelUnit(unit)}?`,
-    `Exemplo: se o veículo percorre 10 km usando 1 ${readableFuelUnit(unit)}, informe 10.`,
-  );
-
-  const revenueInput = document.querySelector('[data-model="revenueKm"]');
-  setFieldCopy(
-    revenueInput,
-    'Quanto você recebe por km rodado?',
-    'Exemplo: R$ 240 de faturamento ÷ 120 km rodados = R$ 2,00 por km.',
-  );
-
-  const onboardingFuel = document.getElementById('onboardingFuelType');
-  const onboardingEfficiency = document.getElementById('onboardingFuelEff');
-  const onboardingUnit = onboardingFuel?.value === 'gnv' ? 'm³ de GNV' : 'litro';
-  setFieldCopy(
-    onboardingEfficiency,
-    `Quantos quilômetros faz com 1 ${onboardingUnit}?`,
-    `Informe a distância média percorrida com 1 ${onboardingUnit}. Você poderá corrigir depois.`,
-  );
-
-  const onboardingRevenue = document.getElementById('onboardingRevenue');
-  setFieldCopy(
-    onboardingRevenue,
-    'Quanto você costuma receber por km rodado?',
-    'Ainda não sabe? Use uma estimativa inicial; os registros reais ajudarão a ajustar esse número.',
-  );
-}
 
 function lockBackground(gate) {
   document.body.classList.add('pwa-install-required');
@@ -193,10 +133,6 @@ function renderInstalledSuccess() {
 }
 
 function initializeGate() {
-  applyDidacticCopy();
-  document.getElementById('fuelType')?.addEventListener('change', () => queueMicrotask(applyDidacticCopy));
-  document.getElementById('onboardingFuelType')?.addEventListener('change', () => queueMicrotask(applyDidacticCopy));
-
   const installed = isStandaloneEnvironment({
     matchMedia: window.matchMedia.bind(window),
     navigatorLike: navigator,
