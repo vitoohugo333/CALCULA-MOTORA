@@ -29,6 +29,8 @@ test('detecta execução instalada por display-mode ou navigator.standalone', ()
 
 test('classifica iPhone, Android e desktop', () => {
   assert.equal(detectInstallPlatform({ userAgent: 'Mozilla/5.0 (iPhone)', platform: 'iPhone' }), INSTALL_PLATFORMS.IOS);
+  assert.equal(detectInstallPlatform({ userAgent: 'Mozilla/5.0 CriOS/151.0 Mobile/15E148 Safari/604.1' }), INSTALL_PLATFORMS.IOS);
+  assert.equal(detectInstallPlatform({ userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/605.1.15 Mobile/15E148' }), INSTALL_PLATFORMS.IOS);
   assert.equal(detectInstallPlatform({ userAgent: 'Mozilla/5.0 (Linux; Android 15)' }), INSTALL_PLATFORMS.ANDROID);
   assert.equal(detectInstallPlatform({ userAgent: 'Mozilla/5.0 (X11; Linux x86_64)' }), INSTALL_PLATFORMS.DESKTOP);
   assert.equal(detectInstallPlatform({ userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 5 }), INSTALL_PLATFORMS.IOS);
@@ -36,7 +38,7 @@ test('classifica iPhone, Android e desktop', () => {
 
 test('identifica Safari e navegadores alternativos no iPhone', () => {
   assert.equal(detectIosBrowser({ userAgent: 'Mozilla/5.0 (iPhone) Version/18.0 Mobile Safari/604.1' }), 'safari-ios');
-  assert.equal(detectIosBrowser({ userAgent: 'Mozilla/5.0 (iPhone) CriOS/140.0 Mobile/15E148 Safari/604.1' }), 'chrome-ios');
+  assert.equal(detectIosBrowser({ userAgent: 'Mozilla/5.0 CriOS/151.0 Mobile/15E148 Safari/604.1' }), 'chrome-ios');
   assert.equal(detectIosBrowser({ userAgent: 'Mozilla/5.0 (Linux; Android 15)' }), 'not-ios');
 });
 
@@ -69,10 +71,22 @@ test('iPhone apresenta instalação como aplicativo com o fluxo aprovado', () =>
   assert.doesNotMatch(visibleCopy(ios), /\bPWA\b|offline|navegador|\baba\b/i);
 });
 
-test('iPhone fora do Safari mantém o fluxo e oferece apenas o fallback necessário', () => {
-  const iosAlternative = installInstructions({
+test('Chrome no iPhone orienta pelo Compartilhar sem cair no menu Android', () => {
+  const chromeIos = installInstructions({
     platform: INSTALL_PLATFORMS.IOS,
     iosBrowser: 'chrome-ios',
+  });
+
+  assert.equal(chromeIos.action, 'instructions-only');
+  assert.equal(chromeIos.actionLabel, '');
+  assert.match(chromeIos.browserHint, /No Chrome, use o botão Compartilhar/);
+  assert.doesNotMatch(chromeIos.steps.join(' '), /menu ⋮|Instalar app/);
+});
+
+test('outro navegador no iPhone oferece apenas o fallback necessário', () => {
+  const iosAlternative = installInstructions({
+    platform: INSTALL_PLATFORMS.IOS,
+    iosBrowser: 'other-ios',
   });
 
   assert.equal(iosAlternative.action, 'copy-address');
