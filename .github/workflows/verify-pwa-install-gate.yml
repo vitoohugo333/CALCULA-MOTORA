@@ -78,8 +78,17 @@ jobs:
       - name: Test didactic flows against Vite dist
         run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/pwa-install-gate.spec.js --grep "configurações|registro diário|novo usuário|simulador|modo instalado"
 
-      - name: Test onboarding flows against Vite dist
-        run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/onboarding-experience.spec.js
+      - name: Test onboarding resume against Vite dist
+        run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/onboarding-experience.spec.js --grep "salva o progresso"
+
+      - name: Test onboarding back navigation against Vite dist
+        run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/onboarding-experience.spec.js --grep "permite voltar"
+
+      - name: Test onboarding optional fields against Vite dist
+        run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/onboarding-experience.spec.js --grep "pula os campos opcionais"
+
+      - name: Test onboarding redo against Vite dist
+        run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/onboarding-experience.spec.js --grep "refaz a configuração"
 
       - name: Test financial and storage parity
         run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/vite-parity.spec.js --grep "dist é carregado"
