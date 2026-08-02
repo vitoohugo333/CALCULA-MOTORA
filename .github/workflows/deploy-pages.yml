@@ -29,8 +29,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: source
 
       - name: Confirm publication source
+        working-directory: source
         run: |
           test "$(git rev-parse HEAD)" = "$VETTA_DEV_SHA"
           echo "Publishing branch: $VETTA_DEV_BRANCH"
@@ -42,9 +44,11 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
+        working-directory: source
         run: npm install --no-audit --no-fund
 
       - name: Verify development candidate
+        working-directory: source
         run: |
           node --check app.js
           node --check sw.js
@@ -52,28 +56,42 @@ jobs:
           npm run check:pwa-gate
           npm run check:didactic-language
           npm run check:onboarding
+          npm run check:vite
           node tests/verify-production.mjs
 
-      - name: Prepare exact GitHub Pages development artifact
-        run: npm run prepare:pages
+      - name: Build exact Vite dist
+        working-directory: source
+        run: npm run build
+
+      - name: Verify Vite dist
+        working-directory: source
+        run: npm run verify:vite-build
 
       - name: Install Chromium for development flow
+        working-directory: source
         run: npx playwright install --with-deps chromium
 
-      - name: Test installation, language and onboarding flows
+      - name: Test all flows against Vite dist
+        working-directory: source
         run: npm run test:pages-e2e
 
-      - name: Publish generated site to gh-pages
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Checkout gh-pages publisher branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: publisher
+
+      - name: Publish Vite dist to gh-pages
         run: |
-          set -euo pipefail
-          cd _site
-          git init
+          find publisher -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -R source/dist/. publisher/
+          cd publisher
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
-          git commit -m "dev: publish ${VETTA_DEV_BRANCH}@${VETTA_DEV_SHA}"
-          git branch -M gh-pages
-          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git push --force origin gh-pages
+          if git diff --cached --quiet; then
+            echo "Published content already matches this build."
+            exit 0
+          fi
+          git commit -m "dev: publish Vite ${VETTA_DEV_BRANCH}@${VETTA_DEV_SHA}"
+          git push origin gh-pages
