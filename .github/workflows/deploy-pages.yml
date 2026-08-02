@@ -1,41 +1,34 @@
-name: Deploy Active Development Branch to GitHub Pages
+name: Publish Active Development Branch to gh-pages
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - 'feature/**'
+      - 'refactor/**'
+      - develop
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: github-pages-development
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      startsWith(github.head_ref, 'feature/') ||
-      startsWith(github.head_ref, 'refactor/') ||
-      github.head_ref == 'develop'
+  publish:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages-development
-      url: ${{ steps.deployment.outputs.page_url }}
     env:
-      VETTA_DEV_BRANCH: ${{ github.head_ref || github.ref_name }}
-      VETTA_DEV_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      VETTA_DEV_PR: ${{ github.event.pull_request.number || 'manual' }}
+      VETTA_DEV_BRANCH: ${{ github.ref_name }}
+      VETTA_DEV_SHA: ${{ github.sha }}
+      VETTA_DEV_PR: branch
     steps:
       - name: Checkout exact working branch commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.sha }}
 
-      - name: Confirm deployment source
+      - name: Confirm publication source
         run: |
           test "$(git rev-parse HEAD)" = "$VETTA_DEV_SHA"
           echo "Publishing branch: $VETTA_DEV_BRANCH"
@@ -66,14 +59,17 @@ jobs:
       - name: Test required PWA installation flow
         run: npm run test:pages-e2e
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload development site
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: _site
-
-      - name: Deploy exact working branch artifact
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish generated site to gh-pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd _site
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "dev: publish ${VETTA_DEV_BRANCH}@${VETTA_DEV_SHA}"
+          git branch -M gh-pages
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin gh-pages
