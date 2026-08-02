@@ -45,6 +45,9 @@ await mkdir(path.join(output, 'src', 'ui'), { recursive: true });
 await cp('src/ui/didactic-language-core.js', path.join(output, 'src', 'ui', 'didactic-language-core.js'));
 await mkdir(path.join(output, 'src', 'onboarding'), { recursive: true });
 await cp('src/onboarding/onboarding-core.js', path.join(output, 'src', 'onboarding', 'onboarding-core.js'));
+await cp('src/domain', path.join(output, 'src', 'domain'), { recursive: true });
+await cp('src/storage', path.join(output, 'src', 'storage'), { recursive: true });
+await cp('src/vite', path.join(output, 'src', 'vite'), { recursive: true });
 
 const sourceHtml = await readFile('index.html', 'utf8');
 if (!sourceHtml.includes('</head>') || !sourceHtml.includes('</body>')) {
@@ -59,6 +62,7 @@ const stylesheets = [
 const scripts = [
   '<script type="module" src="./didactic-language.js?v=phase-2"></script>',
   '<script type="module" src="./onboarding-experience.js?v=phase-3"></script>',
+  '<script type="module" src="./src/vite/main.js?v=phase-4"></script>',
   '<script type="module" src="./pwa-install-gate.js?v=exp-1"></script>',
 ].join('');
 const sourceMeta = [
@@ -74,13 +78,15 @@ const developmentHtml = sourceHtml
 
 if (!developmentHtml.includes('didactic-language.js')
   || !developmentHtml.includes('onboarding-experience.js')
+  || !developmentHtml.includes('src/vite/main.js')
   || !developmentHtml.includes('pwa-install-gate.js')
   || !developmentHtml.includes('vettaDevSource')) {
-  throw new Error('Fases de linguagem, onboarding, instalação ou identificação da branch não foram injetadas no GitHub Pages.');
+  throw new Error('Fases de linguagem, onboarding, Vite, instalação ou identificação da branch não foram injetadas no GitHub Pages.');
 }
 
 const buildInfo = {
   environment: 'github-pages-development',
+  buildSystem: 'vite',
   branch,
   sha,
   pullRequest,
@@ -92,4 +98,4 @@ await writeFile(path.join(output, 'dev-build.json'), `${JSON.stringify(buildInfo
 await writeFile(path.join(output, '.nojekyll'), '');
 await writeFile(path.join(output, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
 
-console.log(`GitHub Pages artifact prepared from ${branch}@${sha}.`);
+console.log(`Vite source artifact prepared from ${branch}@${sha}.`);
