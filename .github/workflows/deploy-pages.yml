@@ -40,19 +40,17 @@ jobs:
           node --check app.js
           node --check sw.js
           npm run check:platform
+          npm run check:pwa-gate
           node tests/verify-production.mjs
 
       - name: Prepare GitHub Pages development site
-        run: |
-          rm -rf _site
-          mkdir -p _site
-          cp index.html app.js styles.css manifest.webmanifest icon.svg sw.js _site/
-          if [ -d src ]; then cp -R src _site/src; fi
-          touch _site/.nojekyll
-          cat > _site/robots.txt <<'TXT'
-          User-agent: *
-          Disallow: /
-          TXT
+        run: npm run prepare:pages
+
+      - name: Install Chromium for development flow
+        run: npx playwright install --with-deps chromium
+
+      - name: Test required PWA installation flow
+        run: npm run test:pages-e2e
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
