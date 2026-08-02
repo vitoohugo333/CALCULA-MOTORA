@@ -11,7 +11,7 @@ export default defineConfig({
     serviceWorkers: 'block',
   },
   webServer: {
-    command: 'python3 -m http.server 4174 --bind 127.0.0.1 --directory _site',
+    command: 'python3 -m http.server 4174 --bind 127.0.0.1 --directory dist',
     url: 'http://127.0.0.1:4174',
     reuseExistingServer: false,
     timeout: 30_000,
