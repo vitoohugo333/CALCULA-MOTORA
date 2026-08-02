@@ -9,6 +9,18 @@ import {
   shouldLockApplication,
 } from '../src/pwa/install-gate-core.js';
 
+const visibleCopy = copy => [
+  copy.eyebrow,
+  copy.title,
+  copy.description,
+  copy.outcome,
+  copy.browserHint,
+  ...copy.benefits.map(item => item.label),
+  ...copy.steps,
+  copy.actionLabel,
+  copy.important,
+].filter(Boolean).join(' ');
+
 test('detecta execução instalada por display-mode ou navigator.standalone', () => {
   assert.equal(isStandaloneEnvironment({ matchMedia: () => ({ matches: true }), navigatorLike: {} }), true);
   assert.equal(isStandaloneEnvironment({ matchMedia: () => ({ matches: false }), navigatorLike: { standalone: true } }), true);
@@ -34,17 +46,60 @@ test('bloqueia somente quando não está instalado', () => {
   assert.equal(shouldLockApplication({ installed: false, testMode: 'installed' }), false);
 });
 
-test('gera instruções didáticas específicas por plataforma', () => {
+test('iPhone apresenta instalação como aplicativo com o fluxo aprovado', () => {
   const ios = installInstructions({ platform: INSTALL_PLATFORMS.IOS, iosBrowser: 'safari-ios' });
-  assert.equal(ios.action, 'copy-link');
-  assert.match(ios.steps.join(' '), /Adicionar à Tela de Início/);
-  assert.match(ios.steps.join(' '), /ícone/);
 
-  const androidPrompt = installInstructions({ platform: INSTALL_PLATFORMS.ANDROID, promptAvailable: true });
+  assert.equal(ios.title, 'Instale o VETTA no seu iPhone');
+  assert.equal(ios.action, 'instructions-only');
+  assert.equal(ios.actionLabel, '');
+  assert.match(ios.description, /Adicionar à Tela de Início/);
+  assert.match(ios.outcome, /como qualquer aplicativo/);
+  assert.deepEqual(ios.benefits.map(item => item.label), [
+    'Instala o aplicativo',
+    'Ícone próprio na Tela de Início',
+    'Você só precisa instalar uma vez',
+  ]);
+  assert.deepEqual(ios.steps, [
+    'Toque em Compartilhar.',
+    'Toque em “Adicionar à Tela de Início”.',
+    'Confirme em “Adicionar”.',
+    'Abra o VETTA pelo novo ícone.',
+  ]);
+  assert.match(ios.important, /feche esta tela/);
+  assert.doesNotMatch(visibleCopy(ios), /\bPWA\b|offline|navegador|\baba\b/i);
+});
+
+test('iPhone fora do Safari mantém o fluxo e oferece apenas o fallback necessário', () => {
+  const iosAlternative = installInstructions({
+    platform: INSTALL_PLATFORMS.IOS,
+    iosBrowser: 'chrome-ios',
+  });
+
+  assert.equal(iosAlternative.action, 'copy-address');
+  assert.equal(iosAlternative.actionLabel, 'Copiar endereço para abrir no Safari');
+  assert.match(iosAlternative.browserHint, /abra esta página no Safari/);
+  assert.match(iosAlternative.outcome, /como qualquer aplicativo/);
+});
+
+test('Android usa botão nativo quando disponível e instrução curta como fallback', () => {
+  const androidPrompt = installInstructions({
+    platform: INSTALL_PLATFORMS.ANDROID,
+    promptAvailable: true,
+  });
   assert.equal(androidPrompt.action, 'prompt');
   assert.equal(androidPrompt.actionLabel, 'Instalar VETTA');
+  assert.deepEqual(androidPrompt.steps, [
+    'Toque em “Instalar VETTA”.',
+    'Confirme em “Instalar”.',
+    'Abra o VETTA pelo novo ícone.',
+  ]);
 
-  const androidFallback = installInstructions({ platform: INSTALL_PLATFORMS.ANDROID, promptAvailable: false });
-  assert.equal(androidFallback.action, 'manual');
-  assert.match(androidFallback.browserHint, /menu/);
+  const androidFallback = installInstructions({
+    platform: INSTALL_PLATFORMS.ANDROID,
+    promptAvailable: false,
+  });
+  assert.equal(androidFallback.action, 'instructions-only');
+  assert.equal(androidFallback.actionLabel, '');
+  assert.match(androidFallback.steps.join(' '), /menu ⋮/);
+  assert.doesNotMatch(visibleCopy(androidFallback), /\bPWA\b|offline|navegador|\baba\b/i);
 });
