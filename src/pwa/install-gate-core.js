@@ -11,23 +11,27 @@ export function isStandaloneEnvironment({ matchMedia, navigatorLike = {} } = {})
   return standaloneMedia || navigatorLike.standalone === true;
 }
 
-export function detectInstallPlatform(navigatorLike = {}) {
+function isIosNavigator(navigatorLike = {}) {
   const userAgent = String(navigatorLike.userAgent || '');
   const platform = String(navigatorLike.platform || '');
   const maxTouchPoints = Number(navigatorLike.maxTouchPoints || 0);
-  const ios = /iPad|iPhone|iPod/i.test(userAgent)
-    || (platform === 'MacIntel' && maxTouchPoints > 1);
-  if (ios) return INSTALL_PLATFORMS.IOS;
+  const iosBrowserToken = /CriOS|FxiOS|EdgiOS|OPiOS/i.test(userAgent);
+  const iosDeviceToken = /iPad|iPhone|iPod/i.test(userAgent);
+  const touchMac = platform === 'MacIntel' && maxTouchPoints > 1;
+  const mobileMac = /Macintosh/i.test(userAgent) && /Mobile/i.test(userAgent);
+  return iosBrowserToken || iosDeviceToken || touchMac || mobileMac;
+}
+
+export function detectInstallPlatform(navigatorLike = {}) {
+  const userAgent = String(navigatorLike.userAgent || '');
+  if (isIosNavigator(navigatorLike)) return INSTALL_PLATFORMS.IOS;
   if (/Android/i.test(userAgent)) return INSTALL_PLATFORMS.ANDROID;
   return INSTALL_PLATFORMS.DESKTOP;
 }
 
 export function detectIosBrowser(navigatorLike = {}) {
   const userAgent = String(navigatorLike.userAgent || '');
-  if (!/iPad|iPhone|iPod/i.test(userAgent)
-      && !(String(navigatorLike.platform || '') === 'MacIntel' && Number(navigatorLike.maxTouchPoints || 0) > 1)) {
-    return 'not-ios';
-  }
+  if (!isIosNavigator(navigatorLike)) return 'not-ios';
   if (/CriOS/i.test(userAgent)) return 'chrome-ios';
   if (/FxiOS/i.test(userAgent)) return 'firefox-ios';
   if (/EdgiOS/i.test(userAgent)) return 'edge-ios';
@@ -49,6 +53,7 @@ const standardBenefits = Object.freeze([
 export function installInstructions({ platform, iosBrowser = 'not-ios', promptAvailable = false } = {}) {
   if (platform === INSTALL_PLATFORMS.IOS) {
     const isSafari = iosBrowser === 'safari-ios';
+    const isChrome = iosBrowser === 'chrome-ios';
     return Object.freeze({
       eyebrow: 'Instalação no iPhone',
       title: 'Instale o VETTA no seu iPhone',
@@ -57,15 +62,17 @@ export function installInstructions({ platform, iosBrowser = 'not-ios', promptAv
       benefits: standardBenefits,
       browserHint: isSafari
         ? 'Siga estes passos:'
-        : 'Siga estes passos. Se a opção não aparecer, abra esta página no Safari.',
+        : isChrome
+          ? 'No Chrome, use o botão Compartilhar ao lado da barra de endereço:'
+          : 'Siga estes passos. Se a opção não aparecer, abra esta página no Safari.',
       steps: Object.freeze([
         'Toque em Compartilhar.',
         'Toque em “Adicionar à Tela de Início”.',
         'Confirme em “Adicionar”.',
         'Abra o VETTA pelo novo ícone.',
       ]),
-      actionLabel: isSafari ? '' : 'Copiar endereço para abrir no Safari',
-      action: isSafari ? 'instructions-only' : 'copy-address',
+      actionLabel: isSafari || isChrome ? '' : 'Copiar endereço para abrir no Safari',
+      action: isSafari || isChrome ? 'instructions-only' : 'copy-address',
       important: 'Depois da instalação, feche esta tela e abra o VETTA pelo ícone criado.',
     });
   }
