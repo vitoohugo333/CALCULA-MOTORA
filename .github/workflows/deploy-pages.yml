@@ -50,6 +50,7 @@ jobs:
           node --check sw.js
           npm run check:platform
           npm run check:pwa-gate
+          npm run check:didactic-language
           node tests/verify-production.mjs
 
       - name: Prepare exact GitHub Pages development artifact
@@ -58,7 +59,7 @@ jobs:
       - name: Install Chromium for development flow
         run: npx playwright install --with-deps chromium
 
-      - name: Test required PWA installation flow
+      - name: Test installation and didactic flows
         run: npm run test:pages-e2e
 
       - name: Publish generated site to gh-pages
