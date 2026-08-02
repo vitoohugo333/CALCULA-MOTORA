@@ -1,11 +1,8 @@
 name: Publish Active Development Branch to gh-pages
 
 on:
-  push:
-    branches:
-      - 'feature/**'
-      - 'refactor/**'
-      - develop
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
@@ -17,16 +14,21 @@ concurrency:
 
 jobs:
   publish:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.head_ref, 'feature/') ||
+      startsWith(github.head_ref, 'refactor/') ||
+      github.head_ref == 'develop'
     runs-on: ubuntu-latest
     env:
-      VETTA_DEV_BRANCH: ${{ github.ref_name }}
-      VETTA_DEV_SHA: ${{ github.sha }}
-      VETTA_DEV_PR: branch
+      VETTA_DEV_BRANCH: ${{ github.head_ref || github.ref_name }}
+      VETTA_DEV_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VETTA_DEV_PR: ${{ github.event.pull_request.number || 'manual' }}
     steps:
       - name: Checkout exact working branch commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Confirm publication source
         run: |
