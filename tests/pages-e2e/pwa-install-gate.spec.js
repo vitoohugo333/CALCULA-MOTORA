@@ -28,6 +28,16 @@ async function emulateIphone(page, browserToken = 'Version/18.0') {
   }, browserToken);
 }
 
+async function openInstalled(page, state = installedState) {
+  await page.addInitScript(({ key, storedState }) => {
+    window.__VETTA_PWA_TEST_MODE__ = 'installed';
+    if (storedState) localStorage.setItem(key, JSON.stringify(storedState));
+  }, { key: STORAGE_KEY, storedState: state });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('html')).toHaveAttribute('data-vetta-pwa-gate', 'unlocked');
+  await expect(page.locator('html')).toHaveAttribute('data-vetta-didactic-language', 'ready');
+}
+
 test('bloqueia o conteúdo até o aplicativo ser aberto pelo ícone instalado', async ({ page }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 
@@ -70,17 +80,62 @@ test('oferece fallback curto quando o iPhone não está no Safari', async ({ pag
   await expect(page.locator('#vettaPwaGateAction')).toHaveText('Copiar endereço para abrir no Safari');
 });
 
-test('libera o aplicativo em modo instalado e aplica linguagem didática', async ({ page }) => {
-  await page.addInitScript(({ key, state }) => {
-    window.__VETTA_PWA_TEST_MODE__ = 'installed';
-    localStorage.setItem(key, JSON.stringify(state));
-  }, { key: STORAGE_KEY, state: installedState });
-
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#vettaPwaInstallGate')).toHaveCount(0);
-  await expect(page.locator('html')).toHaveAttribute('data-vetta-pwa-gate', 'unlocked');
+test('configurações mostram perguntas, unidades, exemplos e glossário', async ({ page }) => {
+  await openInstalled(page);
   await page.locator('[data-view="settings"]').first().click();
-  await expect(page.locator('#fuelEfficiency').locator('xpath=preceding-sibling::label[1]')).toContainText('Quantos quilômetros');
-  await expect(page.locator('#fuelEfficiency').locator('xpath=following-sibling::p[1]')).toContainText('10 km');
-  await expect(page.locator('[data-model="revenueKm"]').locator('xpath=../../label[1]')).toContainText('Quanto você recebe por km rodado');
+
+  const settings = page.locator('#view-settings');
+  await expect(settings).toContainText('Combustível usado nos cálculos');
+  await expect(settings).toContainText('Quanto custa 1 litro?');
+  await expect(settings).toContainText('Quantos quilômetros o veículo faz com 1 litro?');
+  await expect(settings).toContainText('se percorre aproximadamente 10 km');
+  await expect(settings).toContainText('Quanto você recebe por km rodado?');
+  await expect(settings).toContainText('R$ 240 recebidos ÷ 120 km rodados');
+  await expect(settings).toContainText('Contas e dinheiro reservado');
+  await expect(page.locator('#didacticGlossary')).toHaveCount(1);
+  await page.locator('#didacticGlossary summary').click();
+  await expect(page.locator('#didacticGlossary')).toContainText('Valor que você deseja ter depois de pagar os custos');
+  await expect(settings).not.toContainText(/Rendimento|Receita\/km|Meta líquida|\bProjeção\b/i);
+});
+
+test('registro diário aponta exatamente o campo que precisa ser corrigido', async ({ page }) => {
+  await openInstalled(page);
+  await page.locator('[data-view="day"]').first().click();
+
+  await page.locator('#recordGross').fill('0');
+  await page.locator('#recordKm').fill('0');
+  await page.locator('#saveDayButton').click();
+  await expect(page.locator('#toast')).toHaveText('Informe quanto você recebeu no dia.');
+
+  await page.locator('#recordGross').fill('150');
+  await page.locator('#saveDayButton').click();
+  await expect(page.locator('#toast')).toHaveText('Informe quantos quilômetros você rodou.');
+});
+
+test('novo usuário recebe onboarding autoexplicativo sem o termo rendimento', async ({ page }) => {
+  await openInstalled(page, null);
+
+  const onboarding = page.locator('#onboardingModal');
+  await expect(onboarding).toBeVisible();
+  await expect(onboarding).toContainText('Quanto você quer que sobre?');
+  await expect(onboarding).toContainText('Quanto você quer que sobre por mês?');
+  await expect(onboarding).toContainText('depois de pagar os custos do trabalho');
+
+  await page.locator('#onboardingTarget').fill('0');
+  await page.locator('#onboardingNext').click();
+  await expect(page.locator('#toast')).toHaveText('Informe quanto você quer que sobre por mês.');
+
+  await page.locator('#onboardingTarget').fill('4000');
+  await page.locator('#onboardingNext').click();
+  await page.locator('#onboardingFuelType').selectOption('gnv');
+  await expect(onboarding).toContainText('Quanto custa 1 m³ de GNV?');
+  await expect(onboarding).toContainText('Quantos quilômetros o veículo faz com 1 m³ de GNV?');
+  await expect(onboarding).not.toContainText(/Rendimento/i);
+});
+
+test('modo instalado preserva o aplicativo e os dados existentes', async ({ page }) => {
+  await openInstalled(page);
+  await expect(page.locator('#vettaPwaInstallGate')).toHaveCount(0);
+  await expect(page.locator('#targetProfitDisplay')).toContainText('R$ 4.000');
+  await expect(page.locator('body')).toContainText('Quanto você quer que sobre no mês');
 });
