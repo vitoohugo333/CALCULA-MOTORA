@@ -20,7 +20,7 @@
     "check:pwa-gate": "node --check src/pwa/install-gate-core.js && node --check pwa-install-gate.js && npm run test:pwa-gate",
     "check:didactic-language": "node --check src/ui/didactic-language-core.js && node --check didactic-language.js && npm run test:didactic-language",
     "check:onboarding": "node --check src/onboarding/onboarding-core.js && node --check onboarding-experience.js && npm run test:onboarding",
-    "check:vite": "node --check src/domain/finance/calculations.js && node --check src/storage/local-state-store.js && node --check src/vite/parity.js && node --check src/vite/main.js && node --check vite.config.js && node --check scripts/verify-vite-build.mjs && npm run test:finance-domain && npm run test:storage",
+    "check:vite": "node --check src/domain/finance/calculations.js && node --check src/storage/local-state-store.js && node --check src/ui/original-dashboard-view.js && node --check src/vite/parity.js && node --check src/vite/main.js && node --check vite.config.js && node --check scripts/verify-vite-build.mjs && npm run test:finance-domain && npm run test:storage",
     "check:production": "node --check app.js && node --check sw.js && npm run check:platform && node tests/verify-production.mjs && playwright test"
   },
   "devDependencies": {
