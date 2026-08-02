@@ -78,6 +78,9 @@ jobs:
       - name: Test didactic flows against Vite dist
         run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/pwa-install-gate.spec.js --grep "configurações|registro diário|novo usuário|simulador|modo instalado"
 
+      - name: Test original dashboard visual contract
+        run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/dashboard-visual-stability.spec.js
+
       - name: Test onboarding resume against Vite dist
         run: npx playwright test --config=playwright.pages.config.js tests/pages-e2e/onboarding-experience.spec.js --grep "salva o progresso"
 
