@@ -377,6 +377,10 @@ body > main {
   font-weight: 800 !important;
 }
 
+.vetta-original-nav .nav-item[hidden] {
+  display: none !important;
+}
+
 .vetta-original-nav-item i {
   display: none !important;
 }
