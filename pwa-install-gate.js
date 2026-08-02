@@ -112,6 +112,9 @@ function renderGate() {
     iosBrowser: gateState.iosBrowser,
     promptAvailable: availablePrompt,
   });
+  const actionButton = copy.actionLabel
+    ? `<button id="vettaPwaGateAction" class="pwa-gate-primary" type="button">${copy.actionLabel}</button>`
+    : '';
 
   gate.innerHTML = `
     <section class="pwa-gate-card" role="dialog" aria-modal="true" aria-labelledby="vettaPwaGateTitle" aria-describedby="vettaPwaGateDescription">
@@ -120,35 +123,35 @@ function renderGate() {
       <h1 id="vettaPwaGateTitle">${copy.title}</h1>
       <p id="vettaPwaGateDescription" class="pwa-gate-description">${copy.description}</p>
       <div class="pwa-gate-benefits">
-        <div><i class="fa-solid fa-mobile-screen-button"></i><span>Ícone na tela inicial</span></div>
-        <div><i class="fa-solid fa-wifi"></i><span>Uso mais confiável e offline</span></div>
-        <div><i class="fa-solid fa-shield-halved"></i><span>Dados mantidos neste aparelho</span></div>
+        <div><i class="fa-solid fa-mobile-screen-button"></i><span>Acesso pela Tela de Início</span></div>
+        <div><i class="fa-solid fa-bolt"></i><span>Abre direto no VETTA</span></div>
+        <div><i class="fa-solid fa-check"></i><span>Você instala uma única vez</span></div>
       </div>
       <div class="pwa-gate-instructions">
         <strong>${copy.browserHint}</strong>
         <ol>${copy.steps.map(step => `<li>${step}</li>`).join('')}</ol>
       </div>
       <p id="vettaPwaGateStatus" class="pwa-gate-status hidden" role="status" aria-live="polite"></p>
-      <button id="vettaPwaGateAction" class="pwa-gate-primary" type="button">${copy.actionLabel}</button>
-      <button id="vettaPwaGateCheck" class="pwa-gate-secondary" type="button">Já instalei. Como liberar?</button>
-      <p class="pwa-gate-footnote">O conteúdo continuará bloqueado nesta aba. Depois da instalação, abra o VETTA pelo ícone criado.</p>
+      ${actionButton}
+      <button id="vettaPwaGateCheck" class="pwa-gate-secondary" type="button">Já instalei</button>
+      <p class="pwa-gate-footnote">Depois de instalar, abra o VETTA pelo novo ícone.</p>
     </section>`;
 
-  const actionButton = document.getElementById('vettaPwaGateAction');
-  actionButton?.addEventListener('click', async () => {
+  const primaryButton = document.getElementById('vettaPwaGateAction');
+  primaryButton?.addEventListener('click', async () => {
     if (copy.action === 'copy-link') {
       try {
         await copyCurrentUrl();
-        updateStatus('Link copiado. Abra no Safari caso a opção de instalar não apareça neste navegador.', 'success');
+        updateStatus('Link copiado. Abra no Safari e siga os passos mostrados acima.', 'success');
       } catch {
-        updateStatus('Não foi possível copiar automaticamente. Use o endereço exibido na barra do navegador.', 'warning');
+        updateStatus('Não foi possível copiar. Use Compartilhar e toque em “Copiar”.', 'warning');
       }
       return;
     }
 
     const event = promptEvent || window.__vettaApp?.deferredPrompt;
     if (!event) {
-      updateStatus('Abra o menu do navegador e escolha “Instalar app” ou “Adicionar à tela inicial”.', 'warning');
+      updateStatus('Abra o menu ⋮ e toque em “Instalar app” ou “Adicionar à tela inicial”.', 'warning');
       return;
     }
 
@@ -158,13 +161,13 @@ function renderGate() {
       promptEvent = null;
       if (window.__vettaApp) window.__vettaApp.deferredPrompt = null;
       if (choice?.outcome === 'accepted') {
-        updateStatus('Instalação aceita. Aguarde o ícone aparecer e abra o VETTA por ele.', 'success');
+        updateStatus('Instalação iniciada. Quando o ícone aparecer, abra o VETTA por ele.', 'success');
       } else {
-        updateStatus('A instalação foi cancelada. O VETTA continuará bloqueado até ser instalado.', 'warning');
+        updateStatus('Instalação cancelada. Para continuar, instale o VETTA.', 'warning');
       }
       renderGate();
     } catch {
-      updateStatus('O navegador não conseguiu abrir o instalador. Use o menu e procure “Instalar app”.', 'warning');
+      updateStatus('Não foi possível abrir a instalação. Use o menu ⋮ e toque em “Instalar app”.', 'warning');
     }
   });
 
@@ -173,10 +176,10 @@ function renderGate() {
       window.location.reload();
       return;
     }
-    updateStatus('Esta aba ainda é o navegador. Feche-a e abra o VETTA pelo ícone da Tela de Início.', 'neutral');
+    updateStatus('Feche esta tela e abra o VETTA pelo ícone da Tela de Início.', 'neutral');
   });
 
-  actionButton?.focus({ preventScroll: true });
+  (primaryButton || document.getElementById('vettaPwaGateCheck'))?.focus({ preventScroll: true });
 }
 
 function renderInstalledSuccess() {
@@ -185,9 +188,9 @@ function renderInstalledSuccess() {
   gate.innerHTML = `
     <section class="pwa-gate-card pwa-gate-success" role="dialog" aria-modal="true">
       <div class="pwa-gate-success-icon"><i class="fa-solid fa-check"></i></div>
-      <span class="pwa-gate-eyebrow">Instalação concluída</span>
-      <h1>Agora abra pelo ícone do VETTA</h1>
-      <p class="pwa-gate-description">O aplicativo foi instalado, mas esta aba continuará bloqueada. Volte à Tela de Início e toque no novo ícone do VETTA.</p>
+      <span class="pwa-gate-eyebrow">Pronto</span>
+      <h1>Abra o VETTA pelo novo ícone</h1>
+      <p class="pwa-gate-description">O VETTA já foi instalado. Feche esta tela, volte à Tela de Início e toque no ícone do VETTA.</p>
     </section>`;
 }
 
