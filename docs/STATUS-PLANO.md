@@ -16,9 +16,9 @@ Evidência principal:
 
 ## Fase 2 — Linguagem didática
 
-**Status:** concluída no ambiente de desenvolvimento do PR #18.
+**Status:** concluída tecnicamente no ambiente de desenvolvimento do PR #18.
 
-**Commit publicado:** `5c8124e115a52186d813c13f1a26898547bf9df0`
+**Commit funcional publicado:** `5c8124e115a52186d813c13f1a26898547bf9df0`
 
 Entregas concluídas:
 
@@ -44,17 +44,54 @@ Validação humana ainda necessária:
 - observar um motorista novo preenchendo a configuração sem orientação verbal;
 - registrar dúvidas, hesitações e termos ainda pouco claros.
 
-## Próxima fase — Fase 3: Onboarding
+## Fase 3 — Onboarding
+
+**Status:** concluída tecnicamente no ambiente de desenvolvimento do PR #19.
+
+**Commit publicado:** `58fc6f27000f0329b5644f55564742720d2a02be`
+
+Entregas concluídas:
+
+- auditoria do fluxo anterior antes das alterações;
+- rascunho separado do estado financeiro oficial;
+- progresso salvo automaticamente no aparelho;
+- retomada no passo e nos valores exatos após fechar ou recarregar;
+- opção `Fazer depois`, sem bloquear o restante do aplicativo;
+- navegação de volta com progresso preservado;
+- opção para pular os campos opcionais;
+- possibilidade de refazer a configuração pelas Configurações;
+- preservação de registros, eventos, fechamentos e custos criados pelo motorista;
+- substituição apenas dos custos gerados pelo próprio onboarding;
+- confirmação da primeira meta;
+- orientação direta para registrar o primeiro dia;
+- correção do contrato de rótulos para preservar elementos internos usados pelo aplicativo.
+
+Evidência automatizada:
+
+- 6 testes unitários do núcleo do onboarding;
+- 12 cenários finais de navegador somando instalação, linguagem e onboarding;
+- teste direto de retomada após recarregar;
+- teste de preservação de registros, eventos, fechamentos e custos do usuário;
+- teste de campos opcionais e primeira ação;
+- workflow de verificação aprovado;
+- publicação automática em `gh-pages` aprovada;
+- `dev-build.json` confirmou branch, PR e SHA publicados.
+
+Validação humana ainda necessária:
+
+- acompanhar uma pessoa nova concluindo ou adiando o onboarding;
+- verificar se a primeira ação é compreendida sem orientação verbal;
+- observar se o cartão de retomada é percebido com facilidade.
+
+## Próxima fase — Fase 4: Consolidação Vite
 
 Escopo definido no plano:
 
-- fluxo completo;
-- salvar progresso;
-- permitir refazer sem apagar registros;
-- primeira meta;
-- primeira ação;
-- teste com usuário real;
-- permitir voltar e pular campos opcionais;
-- não bloquear o uso indevidamente.
+- domínio financeiro modular;
+- armazenamento desacoplado;
+- telas por módulo;
+- build `dist`;
+- paridade funcional;
+- remoção gradual do legado.
 
-A Fase 3 deve começar por uma auditoria do onboarding atual e por testes que caracterizem o que já funciona antes das alterações.
+A Fase 4 deve começar por caracterização do comportamento atual, definição das fronteiras do domínio e introdução de um build Vite sem remover a entrada legada até existir paridade comprovada.
