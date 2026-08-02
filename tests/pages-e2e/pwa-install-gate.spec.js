@@ -137,6 +137,31 @@ test('novo usuário recebe onboarding autoexplicativo sem o termo rendimento', a
   await expect(onboarding).not.toContainText(/Rendimento/i);
 });
 
+test('simulador e relatório não voltam à linguagem técnica', async ({ page }) => {
+  await openInstalled(page);
+  await page.locator('[data-view="more"]').first().click();
+  await page.locator('#compareDetails summary').click();
+
+  const compare = page.locator('#compareDetails');
+  await expect(compare).toContainText('Quanto custa 1 litro de gasolina?');
+  await expect(compare).toContainText('Quantos km faz com 1 m³ de GNV?');
+  await expect(compare).toContainText('Economia estimada');
+  await expect(page.locator('#chartTitle')).toContainText('Estimativa');
+  await expect(compare).not.toContainText(/Rendimento|Meta líquida|\bProjeção\b/i);
+
+  await page.evaluate(() => {
+    window.print = () => { window.__vettaPrintRequested = true; };
+  });
+  await page.locator('#reportButton').click();
+  const report = page.locator('#reportSheet');
+  await expect(report).toContainText('Quanto você quer que sobre');
+  await expect(report).toContainText('Quanto já sobrou');
+  await expect(report).toContainText('Média recebida por km');
+  await expect(report).toContainText('Estimativa para o fim do mês');
+  await expect(report).not.toContainText(/Meta líquida|Líquido realizado|Receita média\/km|Projeção mensal/);
+  await expect.poll(() => page.evaluate(() => window.__vettaPrintRequested)).toBe(true);
+});
+
 test('modo instalado preserva o aplicativo e os dados existentes', async ({ page }) => {
   await openInstalled(page);
   await expect(page.locator('#vettaPwaInstallGate')).toHaveCount(0);
