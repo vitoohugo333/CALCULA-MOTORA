@@ -20,6 +20,8 @@ async function initializeViteRuntime() {
 
     await import('../../didactic-language.js');
     await import('../../onboarding-experience.js');
+    const { applyOriginalDashboardView } = await import('../ui/original-dashboard-view.js');
+    applyOriginalDashboardView(app);
     await import('../../pwa-install-gate.js');
 
     const run = () => runLegacyParityChecks(app);
